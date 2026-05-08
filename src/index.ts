@@ -1,3 +1,4 @@
+import { readFileSync } from "fs"
 import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
 import * as cheerio from 'cheerio'
@@ -80,6 +81,50 @@ app.get('/health', (c) => {
     service: 'zlurp',
     version: '0.1.0',
     network: NETWORK,
+  })
+})
+
+
+app.get('/openapi.json', (c) => {
+  try {
+    const spec = readFileSync(new URL('../public/openapi.json', import.meta.url), 'utf-8')
+    c.header('Content-Type', 'application/json')
+    return c.body(spec)
+  } catch {
+    return c.json({ error: 'Not found' }, 404)
+  }
+})
+
+app.get('/docs/llms.txt', (c) => {
+  try {
+    const txt = readFileSync(new URL('../public/docs/llms.txt', import.meta.url), 'utf-8')
+    c.header('Content-Type', 'text/plain; charset=utf-8')
+    return c.body(txt)
+  } catch {
+    return c.text('Not found', 404)
+  }
+})
+
+app.get('/.well-known/agent-card.json', (c) => {
+  return c.json({
+    name: 'zlurp',
+    description: 'Web scraping API for AI agents. Convert any URL to clean markdown. Pay per scrape via x402 — no accounts or API keys required.',
+    url: 'https://zlurp.ai',
+    version: '1.0.0',
+    skills: [
+      {
+        id: 'scrape-url',
+        name: 'Scrape URL to markdown',
+        description: 'Convert any public URL to clean structured markdown.',
+        tags: ['scraping', 'markdown', 'web', 'x402'],
+      },
+    ],
+  })
+})
+
+app.get('/.well-known/api-catalog', (c) => {
+  return c.json({
+    apis: [{ title: 'zlurp API', openapi: 'https://zlurp.ai/openapi.json' }],
   })
 })
 

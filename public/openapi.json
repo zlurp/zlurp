@@ -1,0 +1,112 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "zlurp API",
+    "version": "1.0.0",
+    "description": "Web scraping API for AI agents. Convert any public URL to clean markdown. Pay per scrape via x402 micropayments — no accounts, no API keys, no subscriptions.",
+  },
+  "servers": [
+    { "url": "https://zlurp.ai", "description": "Production (Base mainnet)" }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "operationId": "health",
+        "description": "Returns service status. No auth required.",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "example": { "status": "ok", "service": "zlurp", "version": "1.0.0", "network": "base" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/probe": {
+      "get": {
+        "summary": "Probe URL cost",
+        "operationId": "probe",
+        "description": "Free cost estimate for scraping a URL. Call before /scrape to know exact USDC cost. Always free.",
+        "parameters": [
+          { "name": "url", "in": "query", "required": true, "schema": { "type": "string", "format": "uri" }, "description": "The URL to estimate cost for" },
+          { "name": "mode", "in": "query", "required": false, "schema": { "type": "string", "enum": ["article", "full"], "default": "article" }, "description": "article strips nav/ads. full returns entire page." },
+          { "name": "js", "in": "query", "required": false, "schema": { "type": "boolean", "default": false }, "description": "true for JS-rendered pages. Costs 3x more." }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cost estimate",
+            "content": {
+              "application/json": {
+                "example": { "url": "https://example.com", "mode": "article", "js": false, "costUSDC": "0.005000", "pricePerRequest": "0.005 USDC", "network": "base" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scrape": {
+      "post": {
+        "summary": "Scrape URL to markdown",
+        "operationId": "scrape",
+        "description": "Converts any public URL to clean markdown. Requires x402 micropayment in USDC on Base. Without payment returns HTTP 402 with payment requirements.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["url"],
+                "properties": {
+                  "url": { "type": "string", "format": "uri" },
+                  "mode": { "type": "string", "enum": ["article", "full"], "default": "article" },
+                  "js": { "type": "boolean", "default": false }
+                }
+              },
+              "example": { "url": "https://example.com", "mode": "article", "js": false }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful scrape",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "url": "https://example.com",
+                  "mode": "article",
+                  "title": "Example Domain",
+                  "markdown": "# Example Domain\n\nThis domain is for use in illustrative examples.",
+                  "wordCount": 42,
+                  "charCount": 312,
+                  "jsRendered": false,
+                  "cachedResult": false,
+                  "scrapedAt": "2026-05-08T12:00:00.000Z"
+                }
+              }
+            }
+          },
+          "402": { "description": "Payment required — x402 payment specification" },
+          "400": { "description": "Invalid URL or request" },
+          "403": { "description": "Blocked by robots.txt" },
+          "422": { "description": "No extractable content or timeout" }
+        },
+        "security": [{ "x402": [] }]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "x402": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-PAYMENT",
+        "description": "x402 micropayment header. Generated automatically by x402-fetch or compatible clients. Pay USDC on Base."
+      }
+    }
+  }
+}

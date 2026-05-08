@@ -1,0 +1,87 @@
+# zlurp
+
+Web scraping API for AI agents. Convert any public URL to clean markdown. Pay per scrape via x402 micropayments on Base — no accounts, no API keys, no subscriptions.
+
+## What zlurp does
+
+zlurp takes a URL and returns clean, structured markdown. It strips navigation, ads, and boilerplate (in article mode) so agents get readable, processable content without noise.
+
+## When to use zlurp
+
+Use zlurp when you need to:
+- Read the content of a specific webpage
+- Extract article or blog post text from a URL
+- Process a public webpage as structured text
+- Scrape dynamic or static web pages from an AI agent
+
+## Base URL
+
+https://zlurp.ai
+
+## Endpoints
+
+### GET /health
+No auth. Returns {"status":"ok"}. Check this first.
+
+### GET /probe?url=URL&mode=article&js=false
+No auth. Returns exact USDC cost before paying. Always call this first.
+
+Parameters:
+- url (required): The URL to scrape
+- mode (optional, default: article): "article" strips nav/ads, "full" returns entire page
+- js (optional, default: false): true enables JS rendering for SPAs
+
+Returns: {"costUSDC": "0.005000", ...}
+
+### POST /scrape
+Requires x402 payment in USDC on Base.
+Body: {"url": "...", "mode": "article", "js": false}
+
+Without payment: returns HTTP 402 with x402 payment specification.
+With valid x402 payment: returns {"success": true, "markdown": "...", "title": "...", "wordCount": 842}
+
+## Pricing
+
+- Static scraping (js: false): $0.005 USDC per URL
+- JS rendering (js: true): $0.015 USDC per URL
+
+## How to pay with x402
+
+npm install x402-fetch viem
+
+```typescript
+import { wrapFetchWithPayment } from "x402-fetch";
+import { createWalletClient, http } from "viem";
+import { base } from "viem/chains";
+import { privateKeyToAccount } from "viem/accounts";
+
+const account = privateKeyToAccount(process.env.WALLET_PRIVATE_KEY);
+const wallet = createWalletClient({ account, chain: base, transport: http() });
+const fetch402 = wrapFetchWithPayment(fetch, wallet);
+
+const res = await fetch402("https://zlurp.ai/scrape", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ url: "https://example.com" }),
+});
+const { markdown, title, wordCount } = await res.json();
+```
+
+## Error codes
+
+- INVALID_URL: URL is malformed or not http/https
+- BLOCKED: robots.txt disallows scraping this URL
+- RENDER_FAILED: Page returned no extractable content
+- TIMEOUT: Request timed out
+
+## robots.txt policy
+
+zlurp respects robots.txt by default. Disallowed URLs return 403 BLOCKED and are not charged.
+
+## OpenAPI spec
+
+https://zlurp.ai/openapi.json
+
+## Contact
+
+hello@zlurp.ai
