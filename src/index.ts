@@ -1,4 +1,5 @@
 import { readFileSync } from "fs"
+import { facilitator } from "@coinbase/x402"
 import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
 import * as cheerio from 'cheerio'
@@ -112,7 +113,7 @@ app.get('/.well-known/agent-card.json', (c) => {
     url: 'https://zlurp.ai',
     version: '1.0.0',
     skills: [
-      {
+  
         id: 'scrape-url',
         name: 'Scrape URL to markdown',
         description: 'Convert any public URL to clean structured markdown.',
@@ -159,15 +160,14 @@ app.use(
   '/scrape',
   paymentMiddleware(
     RECEIVING_ADDRESS,
-    {
+
       'POST /scrape': {
         price: `$${PRICE_STATIC}`,
         network: NETWORK,
       },
     },
-    {
-      url: 'https://x402.org/facilitator',
-    },
+
+    facilitator,
   ),
 )
 
