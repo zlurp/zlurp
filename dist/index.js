@@ -6,6 +6,7 @@ import TurndownService from 'turndown';
 import { JSDOM } from 'jsdom';
 import { paymentMiddleware } from 'x402-hono';
 import { isAllowed } from './robots.js';
+import { getCache, setCache } from './cache.js';
 const app = new Hono();
 const PRICE_STATIC = 0.005;
 const PRICE_JS = 0.015;
@@ -15,6 +16,58 @@ const td = new TurndownService({
     headingStyle: 'atx',
     codeBlockStyle: 'fenced',
     bulletListMarker: '-',
+});
+app.get('/', (c) => {
+    return c.html(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>zlurp — Web Scraping API for AI Agents</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f7f4ee; color: #1a1a18; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .wrap { max-width: 560px; padding: 3rem 2rem; text-align: center; }
+    .frog { font-size: 4rem; margin-bottom: 1.5rem; }
+    h1 { font-size: 2.5rem; font-weight: 400; margin-bottom: 0.75rem; font-family: Georgia, serif; }
+    h1 em { color: #1a6b3c; font-style: italic; }
+    p { color: #7a7870; font-size: 1.05rem; line-height: 1.7; margin-bottom: 2rem; }
+    .endpoints { background: #1a1a18; border-radius: 10px; padding: 1.5rem; text-align: left; font-family: monospace; font-size: 0.85rem; margin-bottom: 2rem; }
+    .endpoint { margin-bottom: 0.5rem; }
+    .method-get { color: #3dbf74; }
+    .method-post { color: #e8b86d; }
+    .path { color: #cdd6cc; }
+    .desc { color: #555; margin-left: 1rem; }
+    .price { display: inline-block; background: #e8f5ee; color: #1a6b3c; padding: 0.4rem 1rem; border-radius: 100px; font-size: 0.85rem; font-weight: 500; margin-right: 0.5rem; }
+    .links { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 1.5rem; }
+    .links a { color: #1a6b3c; font-size: 0.9rem; text-decoration: none; border-bottom: 1px solid #1a6b3c; padding-bottom: 1px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="frog">🐸</div>
+    <h1>Any URL. <em>Clean markdown.</em></h1>
+    <p>Web scraping API for AI agents. Pay $0.005 per scrape via USDC on Base. No accounts, no API keys, no subscriptions.</p>
+    <div class="endpoints">
+      <div class="endpoint"><span class="method-get">GET</span>  <span class="path">/health</span><span class="desc"># service status</span></div>
+      <div class="endpoint"><span class="method-get">GET</span>  <span class="path">/probe?url=</span><span class="desc"># cost estimate (free)</span></div>
+      <div class="endpoint"><span class="method-post">POST</span> <span class="path">/scrape</span><span class="desc"># scrape url → markdown</span></div>
+      <div class="endpoint"><span class="method-get">GET</span>  <span class="path">/openapi.json</span><span class="desc"># api spec</span></div>
+      <div class="endpoint"><span class="method-get">GET</span>  <span class="path">/docs/llms.txt</span><span class="desc"># for agents</span></div>
+    </div>
+    <div>
+      <span class="price">$0.005 static</span>
+      <span class="price">$0.015 JS rendering</span>
+    </div>
+    <div class="links">
+      <a href="/openapi.json">OpenAPI Spec</a>
+      <a href="/docs/llms.txt">llms.txt</a>
+      <a href="/health">Health</a>
+      <a href="https://x402.org">x402 Protocol</a>
+    </div>
+  </div>
+</body>
+</html>`);
 });
 app.get('/health', (c) => {
     return c.json({
@@ -76,7 +129,6 @@ app.post('/scrape', async (c) => {
     catch {
         return c.json({ error: 'INVALID_URL', message: 'url must be a valid http/https URL' }, 400);
     }
-    // robots.txt check
     const allowed = await isAllowed(url);
     if (!allowed) {
         return c.json({
@@ -84,6 +136,21 @@ app.post('/scrape', async (c) => {
             message: 'This URL is disallowed by robots.txt. zlurp respects robots.txt by default.',
             url,
         }, 403);
+    }
+    const cached = await getCache(url, mode);
+    if (cached) {
+        return c.json({
+            success: true,
+            url,
+            mode,
+            title: cached.title,
+            markdown: cached.markdown,
+            wordCount: cached.wordCount,
+            charCount: cached.charCount,
+            jsRendered: false,
+            cachedResult: true,
+            scrapedAt: cached.scrapedAt,
+        });
     }
     try {
         const res = await fetch(url, {
@@ -124,6 +191,14 @@ app.post('/scrape', async (c) => {
         if (!markdown || markdown.length < 20) {
             return c.json({ error: 'RENDER_FAILED', message: 'Page returned no extractable content' }, 422);
         }
+        const scrapedAt = new Date().toISOString();
+        await setCache(url, mode, {
+            markdown,
+            title,
+            wordCount: markdown.trim().split(/\s+/).length,
+            charCount: markdown.length,
+            scrapedAt,
+        });
         return c.json({
             success: true,
             url,
@@ -134,7 +209,7 @@ app.post('/scrape', async (c) => {
             charCount: markdown.length,
             jsRendered: false,
             cachedResult: false,
-            scrapedAt: new Date().toISOString(),
+            scrapedAt,
         });
     }
     catch (err) {
@@ -150,6 +225,6 @@ serve({ fetch: app.fetch, port }, () => {
     console.log(`🐸 zlurp running on port ${port}`);
     console.log(`   network:  ${NETWORK}`);
     console.log(`   payTo:    ${RECEIVING_ADDRESS}`);
-    console.log(`   cache:    ${process.env.REDIS_URL ? "Redis enabled" : "disabled (no REDIS_URL)"}`);
+    console.log(`   cache:    ${process.env.REDIS_URL ? 'Redis enabled' : 'disabled (no REDIS_URL)'}`);
 });
 export default app;
