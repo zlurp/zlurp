@@ -1,4 +1,5 @@
 import { readFileSync } from "fs";
+import { facilitator } from "@coinbase/x402";
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import * as cheerio from 'cheerio';
@@ -147,16 +148,7 @@ app.use('/scrape', paymentMiddleware(RECEIVING_ADDRESS, {
         price: `$${PRICE_STATIC}`,
         network: NETWORK,
     },
-}, {
-    url: 'https://api.cdp.coinbase.com/platform/x402/facilitator',
-    createAuthHeaders: () => {
-        const keyId = process.env.CDP_API_KEY_ID || '';
-        const secret = process.env.CDP_API_KEY_SECRET || '';
-        const credentials = Buffer.from(`${keyId}:${secret}`).toString('base64');
-        const headers = { Authorization: `Basic ${credentials}` };
-        return Promise.resolve({ verify: headers, settle: headers, supported: headers });
-    },
-}));
+}, facilitator));
 app.post('/scrape', async (c) => {
     let body;
     try {
