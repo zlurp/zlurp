@@ -1,14 +1,18 @@
+import 'dotenv/config'
 import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
 import * as cheerio from 'cheerio'
 import { Readability } from '@mozilla/readability'
 import TurndownService from 'turndown'
 import { JSDOM } from 'jsdom'
+import { paymentMiddleware } from 'x402-hono'
 
 const app = new Hono()
 
 const PRICE_STATIC = 0.005
 const PRICE_JS = 0.015
+const RECEIVING_ADDRESS = process.env.RECEIVING_ADDRESS as `0x${string}`
+const NETWORK = (process.env.NETWORK || 'base-sepolia') as 'base' | 'base-sepolia'
 
 const td = new TurndownService({
   headingStyle: 'atx',
@@ -21,6 +25,7 @@ app.get('/health', (c) => {
     status: 'ok',
     service: 'zlurp',
     version: '0.1.0',
+    network: NETWORK,
   })
 })
 
@@ -47,9 +52,25 @@ app.get('/probe', (c) => {
     js,
     costUSDC: costUSDC.toFixed(6),
     pricePerRequest: `${costUSDC} USDC`,
-    network: process.env.NETWORK || 'base',
+    network: NETWORK,
   })
 })
+
+app.use(
+  '/scrape',
+  paymentMiddleware(
+    RECEIVING_ADDRESS,
+    {
+      'POST /scrape': {
+        price: `$${PRICE_STATIC}`,
+        network: NETWORK,
+      },
+    },
+    {
+      url: 'https://x402.org/facilitator',
+    },
+  ),
+)
 
 app.post('/scrape', async (c) => {
   let body: { url?: string; mode?: string; js?: boolean }
@@ -100,7 +121,6 @@ app.post('/scrape', async (c) => {
         markdown = td.turndown(article.content)
         title = article.title || ''
       } else {
-        // fallback to full
         const $ = cheerio.load(html)
         $('script, style, noscript').remove()
         markdown = td.turndown($('body').html() || '')
@@ -145,6 +165,8 @@ const port = parseInt(process.env.PORT || '3000')
 
 serve({ fetch: app.fetch, port }, () => {
   console.log(`🐸 zlurp running on port ${port}`)
+  console.log(`   network:  ${NETWORK}`)
+  console.log(`   payTo:    ${RECEIVING_ADDRESS}`)
 })
 
 export default app
