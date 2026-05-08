@@ -10,10 +10,16 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.13.0",
-    "hono": "^4.4.0"
+    "@mozilla/readability": "^0.6.0",
+    "cheerio": "^1.2.0",
+    "hono": "^4.4.0",
+    "jsdom": "^29.1.1",
+    "turndown": "^7.2.4"
   },
   "devDependencies": {
+    "@types/jsdom": "^28.0.1",
     "@types/node": "^20.0.0",
+    "@types/turndown": "^5.0.6",
     "tsx": "^4.15.0",
     "typescript": "^5.4.0"
   },
