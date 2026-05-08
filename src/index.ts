@@ -408,4 +408,128 @@ serve({ fetch: app.fetch, port }, () => {
   console.log(`   cache:    ${process.env.REDIS_URL ? 'Redis enabled' : 'disabled (no REDIS_URL)'}`)
 })
 
+
+app.get('/llms.txt', (c) => {
+  try {
+    const txt = readFileSync(new URL('../public/docs/llms.txt', import.meta.url), 'utf-8')
+    c.header('Content-Type', 'text/plain; charset=utf-8')
+    return c.body(txt)
+  } catch {
+    return c.text('Not found', 404)
+  }
+})
+
+app.get('/.well-known/llms.txt', (c) => {
+  try {
+    const txt = readFileSync(new URL('../public/docs/llms.txt', import.meta.url), 'utf-8')
+    c.header('Content-Type', 'text/plain; charset=utf-8')
+    return c.body(txt)
+  } catch {
+    return c.text('Not found', 404)
+  }
+})
+
+app.get('/robots.txt', (c) => {
+  c.header('Content-Type', 'text/plain; charset=utf-8')
+  return c.body(`User-agent: *
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: ByteSpider
+Disallow: /
+
+Sitemap: https://zlurp.ai/sitemap.xml
+
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+`)
+})
+
+app.get('/sitemap.xml', (c) => {
+  const today = new Date().toISOString().split('T')[0]
+  c.header('Content-Type', 'application/xml')
+  return c.body(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://zlurp.ai/</loc><lastmod>${today}</lastmod><priority>1.0</priority></url>
+  <url><loc>https://zlurp.ai/openapi.json</loc><lastmod>${today}</lastmod><priority>0.9</priority></url>
+  <url><loc>https://zlurp.ai/docs/llms.txt</loc><lastmod>${today}</lastmod><priority>0.8</priority></url>
+  <url><loc>https://zlurp.ai/pricing.md</loc><lastmod>${today}</lastmod><priority>0.8</priority></url>
+</urlset>`)
+})
+
+app.get('/index.md', (c) => {
+  c.header('Content-Type', 'text/markdown; charset=utf-8')
+  return c.body(`# zlurp — Web Scraping API for AI Agents
+
+Any URL to clean markdown. Pay per scrape via x402 micropayments on Base. No accounts, no API keys, no subscriptions.
+
+## Pricing
+- Static scraping: $0.005 USDC per URL
+- JS rendering: $0.015 USDC per URL
+
+## Endpoints
+- GET /health — service status
+- GET /probe?url= — cost estimate (free)
+- POST /scrape — scrape URL to markdown (x402 payment required)
+- GET /openapi.json — OpenAPI 3.1 spec
+- GET /docs/llms.txt — agent instructions
+
+## Contact
+hello@zlurp.ai
+`)
+})
+
+app.get('/pricing.md', (c) => {
+  c.header('Content-Type', 'text/markdown; charset=utf-8')
+  return c.body(`# zlurp Pricing
+
+No subscriptions. No minimums. Pay per scrape via USDC on Base.
+
+## Rates
+
+| Mode | Price |
+|------|-------|
+| Static scraping (js: false) | $0.005 USDC per URL |
+| JS rendering (js: true) | $0.015 USDC per URL |
+
+## How billing works
+
+- Payments via x402 protocol in USDC on Base mainnet
+- No account or credit card required
+- Payment settled on-chain per request
+- Failed requests due to robots.txt blocking are not charged
+- GET /probe is always free
+
+## Contact
+hello@zlurp.ai
+`)
+})
+
+app.get('/.well-known/ai-plugin.json', (c) => {
+  return c.json({
+    schema_version: 'v1',
+    name_for_human: 'zlurp',
+    name_for_model: 'zlurp',
+    description_for_human: 'Web scraping API for AI agents. Convert any URL to clean markdown. Pay $0.005 per scrape via USDC on Base.',
+    description_for_model: 'Use zlurp to scrape any public URL and get clean markdown. Call /probe first for cost estimate (free), then POST to /scrape with x402 payment. Returns title, markdown, wordCount.',
+    auth: { type: 'none' },
+    api: { type: 'openapi', url: 'https://zlurp.ai/openapi.json' },
+    contact_email: 'hello@zlurp.ai',
+    legal_info_url: 'https://zlurp.ai/terms',
+  })
+})
+
 export default app
