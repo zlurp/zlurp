@@ -682,3 +682,43 @@ app.get('/terms', (c) => {
 app.get('/docs', (c) => {
   return c.redirect('/docs/llms.txt', 301)
 })
+
+app.get('/.well-known/x402', (c) => {
+  return c.json({
+    x402Version: 1,
+    resources: [
+      {
+        resource: 'https://zlurp.ai/scrape',
+        type: 'http',
+        description: 'Scrape any public URL to clean markdown. Returns title, markdown content, and word count.',
+        category: 'data',
+        pricing: '$0.005 USDC per URL (static), $0.015 USDC per URL (JS rendering)',
+        network: 'eip155:8453',
+        asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+        schema: {
+          input: {
+            type: 'object',
+            properties: {
+              url: { type: 'string', description: 'The public URL to scrape' },
+              mode: { type: 'string', enum: ['article', 'full'], default: 'article', description: 'article strips nav/ads, full returns entire page' },
+              js: { type: 'boolean', default: false, description: 'Enable JS rendering for SPAs (costs 3x more)' }
+            },
+            required: ['url']
+          },
+          output: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              title: { type: 'string' },
+              markdown: { type: 'string' },
+              wordCount: { type: 'integer' },
+              charCount: { type: 'integer' },
+              cachedResult: { type: 'boolean' },
+              scrapedAt: { type: 'string', format: 'date-time' }
+            }
+          }
+        }
+      }
+    ]
+  })
+})
