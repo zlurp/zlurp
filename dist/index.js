@@ -20,12 +20,99 @@ const td = new TurndownService({
     bulletListMarker: '-',
 });
 app.get('/', (c) => {
+    // Support markdown content negotiation
+    const accept = c.req.header('Accept') || '';
+    if (accept.includes('text/markdown')) {
+        c.header('Content-Type', 'text/markdown; charset=utf-8');
+        c.header('Vary', 'Accept');
+        return c.body(`# zlurp — Web Scraping API for AI Agents
+
+Any URL → clean markdown. Pay per scrape via x402 micropayments on Base. No accounts, no API keys, no subscriptions.
+
+## Pricing
+- Static scraping: $0.005 USDC per URL
+- JS rendering: $0.015 USDC per URL
+
+## Endpoints
+- GET /health — service status
+- GET /probe?url= — cost estimate (free)
+- POST /scrape — scrape URL to markdown (x402 payment required)
+- GET /openapi.json — OpenAPI 3.1 spec
+- GET /docs/llms.txt — agent instructions
+`);
+    }
+    // Agent mode view
+    const mode = c.req.query('mode');
+    if (mode === 'agent') {
+        c.header('Content-Type', 'application/json');
+        return c.json({
+            name: 'zlurp',
+            description: 'Web scraping API for AI agents. Convert any URL to clean markdown via x402 micropayments.',
+            baseUrl: 'https://zlurp.ai',
+            version: '1.0.0',
+            pricing: { static: '$0.005 USDC per URL', js: '$0.015 USDC per URL' },
+            auth: { type: 'x402', description: 'Pay per request via USDC on Base. No API keys needed.' },
+            endpoints: [
+                { method: 'GET', path: '/health', auth: false, description: 'Service status' },
+                { method: 'GET', path: '/probe', auth: false, description: 'Cost estimate for scraping a URL' },
+                { method: 'POST', path: '/scrape', auth: 'x402', description: 'Scrape URL to markdown' },
+            ],
+            links: {
+                openapi: 'https://zlurp.ai/openapi.json',
+                llms: 'https://zlurp.ai/llms.txt',
+                agentCard: 'https://zlurp.ai/.well-known/agent-card.json',
+            },
+        });
+    }
+    c.header('Link', '</sitemap.xml>; rel="sitemap", </index.md>; rel="alternate"; type="text/markdown", </openapi.json>; rel="service-desc"; type="application/json"');
+    c.header('Vary', 'Accept');
     return c.html(`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>zlurp — Web Scraping API for AI Agents</title>
+  <meta name="description" content="Any URL to clean markdown. Web scraping API for AI agents. Pay $0.005 per scrape via USDC on Base. No accounts, no API keys, no subscriptions.">
+  <meta property="og:title" content="zlurp — Web Scraping API for AI Agents">
+  <meta property="og:description" content="Any URL to clean markdown. Pay per scrape via x402 micropayments. No accounts needed.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://zlurp.ai">
+  <link rel="canonical" href="https://zlurp.ai">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "zlurp",
+    "url": "https://zlurp.ai",
+    "description": "Web scraping API for AI agents. Convert any URL to clean markdown via x402 micropayments on Base. No accounts, no API keys, no subscriptions.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web",
+    "offers": {
+      "@type": "Offer",
+      "price": "0.005",
+      "priceCurrency": "USDC",
+      "description": "Pay per scrape via x402 micropayments"
+    },
+    "provider": {
+      "@type": "Organization",
+      "name": "zlurp",
+      "url": "https://zlurp.ai",
+      "email": "hello@zlurp.ai"
+    },
+    "featureList": [
+      "URL to markdown conversion",
+      "x402 micropayments",
+      "No API keys required",
+      "Article extraction mode",
+      "Full page mode",
+      "robots.txt compliant",
+      "Redis caching"
+    ],
+    "sameAs": [
+      "https://github.com/zlurp/zlurp"
+    ]
+  }
+  </script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f7f4ee; color: #1a1a18; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
@@ -63,7 +150,8 @@ app.get('/', (c) => {
     </div>
     <div class="links">
       <a href="/openapi.json">OpenAPI Spec</a>
-      <a href="/docs/llms.txt">llms.txt</a>
+      <a href="/llms.txt">llms.txt</a>
+      <a href="/pricing.md">Pricing</a>
       <a href="/health">Health</a>
       <a href="https://x402.org">x402 Protocol</a>
     </div>
@@ -116,8 +204,20 @@ app.get('/.well-known/agent-card.json', (c) => {
     });
 });
 app.get('/.well-known/api-catalog', (c) => {
+    c.header('Content-Type', 'application/linkset+json;profile="https://www.rfc-editor.org/info/rfc9727"');
     return c.json({
-        apis: [{ title: 'zlurp API', openapi: 'https://zlurp.ai/openapi.json' }],
+        linkset: [
+            {
+                anchor: 'https://zlurp.ai',
+                item: [
+                    {
+                        href: 'https://zlurp.ai/openapi.json',
+                        type: 'application/json',
+                        title: 'zlurp OpenAPI 3.1 Spec',
+                    },
+                ],
+            },
+        ],
     });
 });
 app.get('/probe', (c) => {
