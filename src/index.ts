@@ -1,12 +1,14 @@
 import { readFileSync } from "fs"
-import { facilitator } from "@coinbase/x402"
 import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
 import * as cheerio from 'cheerio'
 import { Readability } from '@mozilla/readability'
 import TurndownService from 'turndown'
 import { JSDOM } from 'jsdom'
-import { paymentMiddleware } from 'x402-hono'
+import { paymentMiddleware } from '@x402/hono'
+import { x402ResourceServer, HTTPFacilitatorClient } from '@x402/core/server'
+import { ExactEvmScheme } from '@x402/evm/exact/server'
+import { bazaarResourceServerExtension, declareDiscoveryExtension, withBazaar } from '@x402/extensions/bazaar'
 import { isAllowed } from './robots.js'
 import { getCache, setCache } from './cache.js'
 
@@ -16,6 +18,52 @@ const PRICE_STATIC = 0.005
 const PRICE_JS = 0.015
 const RECEIVING_ADDRESS = process.env.RECEIVING_ADDRESS as `0x${string}`
 const NETWORK = (process.env.NETWORK || 'base-sepolia') as 'base' | 'base-sepolia'
+const CHAIN_ID = NETWORK === 'base' ? '8453' : '84532'
+
+// x402 v2 resource server with CDP facilitator + Bazaar extension
+const facilitatorClient = new HTTPFacilitatorClient({
+  url: 'https://api.cdp.coinbase.com/platform/v2/x402/facilitator',
+  createAuthHeaders: () => {
+    const keyId = process.env.CDP_API_KEY_ID || ''
+    const secret = process.env.CDP_API_KEY_SECRET || ''
+    const credentials = Buffer.from(`${keyId}:${secret}`).toString('base64')
+    const headers = { Authorization: `Basic ${credentials}` }
+    return Promise.resolve({ verify: headers, settle: headers, supported: headers })
+  },
+})
+
+const bazaarClient = withBazaar(facilitatorClient)
+
+const resourceServer = new x402ResourceServer(bazaarClient)
+  .register(`eip155:${CHAIN_ID}`, new ExactEvmScheme())
+
+// Bazaar discovery extension for /scrape
+const scrapeDiscovery = (declareDiscoveryExtension as any)({
+  bodyType: 'json',
+  method: 'POST',
+  input: { url: 'https://example.com', mode: 'article', js: false },
+  inputSchema: {
+    type: 'object',
+    properties: {
+      url: { type: 'string', description: 'The public URL to scrape' },
+      mode: { type: 'string', enum: ['article', 'full'], default: 'article' },
+      js: { type: 'boolean', default: false },
+    },
+    required: ['url'],
+  },
+  output: {
+    example: { success: true, title: 'Example Domain', markdown: '# Example', wordCount: 17 },
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        title: { type: 'string' },
+        markdown: { type: 'string' },
+        wordCount: { type: 'integer' },
+      },
+    },
+  },
+})
 
 const td = new TurndownService({
   headingStyle: 'atx',
@@ -314,15 +362,20 @@ app.get('/probe', (c) => {
 app.use(
   '/scrape',
   paymentMiddleware(
-    RECEIVING_ADDRESS,
     {
       'POST /scrape': {
-        price: `$${PRICE_STATIC}`,
-        network: NETWORK,
+        accepts: {
+          scheme: 'exact',
+          price: `$${PRICE_STATIC}`,
+          network: `eip155:${CHAIN_ID}` as `eip155:${string}`,
+          payTo: RECEIVING_ADDRESS,
+          maxTimeoutSeconds: 300,
+        },
+        description: 'Scrape any public URL to clean markdown',
+        mimeType: 'application/json',
       },
     },
-
-    facilitator as any,
+    resourceServer,
   ),
 )
 
