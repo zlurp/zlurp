@@ -178,6 +178,7 @@ serve({ fetch: app.fetch, port }, () => {
   console.log(`🐸 zlurp running on port ${port}`)
   console.log(`   network:  ${NETWORK}`)
   console.log(`   payTo:    ${RECEIVING_ADDRESS}`)
+  console.log(`   cache:    ${process.env.REDIS_URL ? "Redis enabled" : "disabled (no REDIS_URL)"}`)
 })
 
 export default app
