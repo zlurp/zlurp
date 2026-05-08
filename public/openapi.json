@@ -3,7 +3,7 @@
   "info": {
     "title": "zlurp API",
     "version": "1.0.0",
-    "description": "Web scraping API for AI agents. Convert any public URL to clean markdown. Pay per scrape via x402 micropayments — no accounts, no API keys, no subscriptions.",
+    "description": "Web scraping API for AI agents. Convert any public URL to clean markdown. Pay per scrape via x402 micropayments — no accounts, no API keys, no subscriptions."
   },
   "servers": [
     { "url": "https://zlurp.ai", "description": "Production (Base mainnet)" }
