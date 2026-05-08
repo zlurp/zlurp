@@ -7,7 +7,7 @@ async function getClient() {
     if (client && connected)
         return client;
     client = createClient({ url: process.env.REDIS_URL });
-    client.on('error', (err) => {
+    client.on("error", (err) => {
         console.error('[cache] Redis error:', err.message);
         connected = false;
     });
