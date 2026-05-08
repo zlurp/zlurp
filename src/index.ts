@@ -6,6 +6,7 @@ import { Readability } from '@mozilla/readability'
 import TurndownService from 'turndown'
 import { JSDOM } from 'jsdom'
 import { paymentMiddleware } from 'x402-hono'
+import { isAllowed } from './robots.js'
 
 const app = new Hono()
 
@@ -93,6 +94,16 @@ app.post('/scrape', async (c) => {
     }
   } catch {
     return c.json({ error: 'INVALID_URL', message: 'url must be a valid http/https URL' }, 400)
+  }
+
+  // robots.txt check
+  const allowed = await isAllowed(url)
+  if (!allowed) {
+    return c.json({
+      error: 'BLOCKED',
+      message: 'This URL is disallowed by robots.txt. zlurp respects robots.txt by default.',
+      url,
+    }, 403)
   }
 
   try {
