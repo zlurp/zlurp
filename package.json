@@ -4,7 +4,7 @@
   "description": "Web scraping API for AI agents — x402 micropayments, no accounts",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "dotenv -e .env -- tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js"
   },
@@ -23,6 +23,7 @@
     "@types/jsdom": "^28.0.1",
     "@types/node": "^20.0.0",
     "@types/turndown": "^5.0.6",
+    "dotenv-cli": "^11.0.0",
     "tsx": "^4.15.0",
     "typescript": "^5.4.0"
   },

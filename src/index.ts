@@ -1,4 +1,4 @@
-import dotenv from 'dotenv'; dotenv.config({ override: false })
+
 import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
 import * as cheerio from 'cheerio'
