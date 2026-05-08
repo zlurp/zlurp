@@ -77,6 +77,7 @@ Any URL → clean markdown. Pay per scrape via x402 micropayments on Base. No ac
   <meta property="og:description" content="Any URL to clean markdown. Pay per scrape via x402 micropayments. No accounts needed.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://zlurp.ai">
+  <meta property="og:image" content="https://zlurp.ai/og.png">
   <link rel="canonical" href="https://zlurp.ai">
   <script type="application/ld+json">
   {
@@ -110,6 +111,54 @@ Any URL → clean markdown. Pay per scrape via x402 micropayments on Base. No ac
     ],
     "sameAs": [
       "https://github.com/zlurp/zlurp"
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "zlurp",
+    "url": "https://zlurp.ai",
+    "email": "hello@zlurp.ai",
+    "description": "Web scraping API for AI agents",
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "email": "hello@zlurp.ai",
+      "contactType": "technical support"
+    },
+    "sameAs": ["https://github.com/zlurp/zlurp"]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How much does zlurp cost?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "zlurp costs $0.005 USDC per URL for static scraping and $0.015 USDC per URL for JS-rendered pages."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do I need an account to use zlurp?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. zlurp uses x402 micropayments on Base. Any wallet with USDC can call the API immediately with no account or API key required."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is the x402 payment protocol?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "x402 is an HTTP payment protocol that uses the 402 Payment Required status code. Agents pay USDC on Base automatically using an x402-compatible client like x402-fetch."
+        }
+      }
     ]
   }
   </script>
@@ -152,6 +201,8 @@ Any URL → clean markdown. Pay per scrape via x402 micropayments on Base. No ac
       <a href="/openapi.json">OpenAPI Spec</a>
       <a href="/llms.txt">llms.txt</a>
       <a href="/pricing.md">Pricing</a>
+      <a href="/about">About</a>
+      <a href="/privacy">Privacy</a>
       <a href="/health">Health</a>
       <a href="https://x402.org">x402 Protocol</a>
     </div>
@@ -487,3 +538,96 @@ app.get('/.well-known/ai-plugin.json', (c) => {
     });
 });
 export default app;
+app.get('/llms-full.txt', (c) => {
+    try {
+        const txt = readFileSync(new URL('../public/docs/llms.txt', import.meta.url), 'utf-8');
+        c.header('Content-Type', 'text/plain; charset=utf-8');
+        return c.body(txt);
+    }
+    catch {
+        return c.text('Not found', 404);
+    }
+});
+app.get('/about', (c) => {
+    c.header('Content-Type', 'text/html; charset=utf-8');
+    return c.html(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About — zlurp</title>
+  <meta name="description" content="zlurp is a web scraping API built for AI agents. Convert any URL to clean markdown via x402 micropayments on Base.">
+  <style>body{font-family:system-ui,sans-serif;max-width:640px;margin:4rem auto;padding:0 2rem;line-height:1.7;color:#1a1a18;background:#f7f4ee}h1{font-family:Georgia,serif;font-weight:400;margin-bottom:1rem}a{color:#1a6b3c}</style>
+</head>
+<body>
+  <h1>About zlurp</h1>
+  <p>zlurp is a web scraping API built natively for AI agents. It converts any public URL into clean, structured markdown using the x402 payment protocol for per-request micropayments on Base mainnet.</p>
+  <p>The core idea: AI agents need to read web pages constantly, but every existing scraping tool requires accounts, API keys, and monthly subscriptions — none of which an autonomous agent can set up. zlurp uses x402 so any agent with a funded Base wallet can start scraping immediately with zero human setup.</p>
+  <p>zlurp is a sister product to <a href="https://docpull.ai">docpull.ai</a>, a PDF extraction API for AI agents built on the same x402 architecture.</p>
+  <h2>How it works</h2>
+  <p>Send a URL to /scrape. The server returns a 402 with USDC payment requirements. Your x402-compatible client pays $0.005 on Base, retries the request, and receives clean markdown. The entire flow takes one round trip with no human intervention.</p>
+  <p>zlurp uses Mozilla Readability for article extraction (the same engine as Firefox Reader View), Cheerio for full-page scraping, and Turndown for HTML-to-markdown conversion. Results are cached in Redis for one hour.</p>
+  <h2>Contact</h2>
+  <p>Email: <a href="mailto:hello@zlurp.ai">hello@zlurp.ai</a></p>
+  <p><a href="/">← Home</a></p>
+</body>
+</html>`);
+});
+app.get('/privacy', (c) => {
+    c.header('Content-Type', 'text/html; charset=utf-8');
+    return c.html(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — zlurp</title>
+  <style>body{font-family:system-ui,sans-serif;max-width:640px;margin:4rem auto;padding:0 2rem;line-height:1.7;color:#1a1a18;background:#f7f4ee}h1,h2{font-family:Georgia,serif;font-weight:400}a{color:#1a6b3c}</style>
+</head>
+<body>
+  <h1>Privacy Policy</h1>
+  <p>Last updated: May 2026</p>
+  <h2>What we collect</h2>
+  <p>zlurp collects minimal data. When you call the /scrape endpoint, we temporarily process the URL you submit and cache the scraped result for up to one hour to serve repeated requests efficiently. We do not store URLs or scraped content permanently.</p>
+  <p>Payments are processed via the x402 protocol on the Base blockchain. Payment transactions are publicly visible on-chain by nature of blockchain technology. We receive the USDC payment amount and the sending wallet address as part of each transaction.</p>
+  <h2>What we do not collect</h2>
+  <p>We do not collect names, email addresses, or any personal identifying information. We do not require account creation. We do not use cookies or tracking pixels. We do not sell data to third parties.</p>
+  <h2>Infrastructure</h2>
+  <p>zlurp is hosted on Railway. Caching is provided by Upstash Redis. Both services may retain logs for operational purposes according to their own privacy policies.</p>
+  <h2>Contact</h2>
+  <p>For privacy questions, contact <a href="mailto:hello@zlurp.ai">hello@zlurp.ai</a>.</p>
+  <p><a href="/">← Home</a></p>
+</body>
+</html>`);
+});
+app.get('/terms', (c) => {
+    c.header('Content-Type', 'text/html; charset=utf-8');
+    return c.html(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms of Service — zlurp</title>
+  <style>body{font-family:system-ui,sans-serif;max-width:640px;margin:4rem auto;padding:0 2rem;line-height:1.7;color:#1a1a18;background:#f7f4ee}h1,h2{font-family:Georgia,serif;font-weight:400}a{color:#1a6b3c}</style>
+</head>
+<body>
+  <h1>Terms of Service</h1>
+  <p>Last updated: May 2026</p>
+  <h2>Service description</h2>
+  <p>zlurp provides a web scraping API that converts public URLs to markdown. The service is provided on a pay-per-request basis via the x402 payment protocol using USDC on Base mainnet.</p>
+  <h2>Acceptable use</h2>
+  <p>You may use zlurp to scrape publicly accessible web pages that you have permission to access. You are responsible for ensuring your use complies with the terms of service of websites you scrape and applicable laws including copyright law.</p>
+  <p>zlurp respects robots.txt by default. URLs disallowed by robots.txt will return a 403 error and will not be charged. You must not use zlurp to scrape websites in violation of their terms of service.</p>
+  <p>You may not use zlurp for illegal purposes, to harvest personal data without consent, or to conduct denial-of-service attacks against third-party websites.</p>
+  <h2>Payment</h2>
+  <p>Payments are non-refundable once settled on-chain. Cached results served within one hour of the original scrape are still charged at the standard rate. Failed requests due to robots.txt blocking are not charged.</p>
+  <h2>Disclaimer</h2>
+  <p>zlurp is provided as-is without warranty. We are not responsible for the content of scraped pages or for any damages arising from your use of the service.</p>
+  <h2>Contact</h2>
+  <p><a href="mailto:hello@zlurp.ai">hello@zlurp.ai</a></p>
+  <p><a href="/">← Home</a></p>
+</body>
+</html>`);
+});
+app.get('/docs', (c) => {
+    return c.redirect('/docs/llms.txt', 301);
+});
