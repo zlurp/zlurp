@@ -14,7 +14,6 @@
     "@mozilla/readability": "^0.6.0",
     "@x402/core": "^2.11.0",
     "@x402/evm": "^2.11.0",
-    "@x402/express": "^2.11.0",
     "@x402/extensions": "^2.11.0",
     "@x402/hono": "^2.11.0",
     "cheerio": "^1.2.0",
