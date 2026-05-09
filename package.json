@@ -12,7 +12,11 @@
     "@coinbase/x402": "^2.1.0",
     "@hono/node-server": "^1.13.0",
     "@mozilla/readability": "^0.6.0",
+    "@x402/core": "^2.11.0",
+    "@x402/evm": "^2.11.0",
+    "@x402/express": "^2.11.0",
     "@x402/extensions": "^2.11.0",
+    "@x402/hono": "^2.11.0",
     "cheerio": "^1.2.0",
     "dotenv": "^17.4.2",
     "hono": "^4.4.0",
@@ -26,11 +30,11 @@
   },
   "devDependencies": {
     "@types/jsdom": "^28.0.1",
-    "@types/node": "^20.0.0",
+    "@types/node": "^20.19.40",
     "@types/turndown": "^5.0.6",
     "dotenv-cli": "^11.0.0",
-    "tsx": "^4.15.0",
-    "typescript": "^5.4.0"
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": ">=20.0.0"
