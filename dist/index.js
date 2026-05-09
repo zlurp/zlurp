@@ -342,6 +342,7 @@ app.use('/scrape', paymentMiddleware({
             network: `eip155:${CHAIN_ID}`,
             payTo: RECEIVING_ADDRESS,
             maxTimeoutSeconds: 300,
+            resource: 'https://zlurp.ai/scrape',
         },
         description: 'Scrape any public URL to clean markdown',
         mimeType: 'application/json',

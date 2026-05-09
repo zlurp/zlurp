@@ -367,6 +367,7 @@ app.use(
           network: `eip155:${CHAIN_ID}` as `eip155:${string}`,
           payTo: RECEIVING_ADDRESS,
           maxTimeoutSeconds: 300,
+          resource: 'https://zlurp.ai/scrape',
         },
         description: 'Scrape any public URL to clean markdown',
         mimeType: 'application/json',
