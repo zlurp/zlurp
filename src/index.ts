@@ -17,6 +17,18 @@ import { getCache, setCache } from './cache.js'
 
 const app = new Hono()
 
+// Trust proxy headers so x402 sees https:// URLs
+app.use('*', async (c, next) => {
+  const proto = c.req.header('x-forwarded-proto')
+  if (proto === 'https') {
+    // Rewrite the URL to use https
+    const url = new URL(c.req.url)
+    url.protocol = 'https:'
+    Object.defineProperty(c.req.raw, 'url', { value: url.toString(), writable: true })
+  }
+  await next()
+})
+
 const PRICE_STATIC = 0.005
 const PRICE_JS = 0.015
 const RECEIVING_ADDRESS = process.env.RECEIVING_ADDRESS as `0x${string}`
