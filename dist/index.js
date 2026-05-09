@@ -5,10 +5,8 @@ import * as cheerio from 'cheerio';
 import { Readability } from '@mozilla/readability';
 import TurndownService from 'turndown';
 import { JSDOM } from 'jsdom';
-import { paymentMiddleware } from '@x402/hono';
-import { x402ResourceServer, HTTPFacilitatorClient } from '@x402/core/server';
-import { ExactEvmScheme } from '@x402/evm/exact/server';
-import { declareDiscoveryExtension, withBazaar } from '@x402/extensions/bazaar';
+import { paymentMiddleware } from 'x402-hono';
+import { declareDiscoveryExtension } from '@x402/extensions/bazaar';
 import { isAllowed } from './robots.js';
 import { getCache, setCache } from './cache.js';
 const app = new Hono();
@@ -17,20 +15,6 @@ const PRICE_JS = 0.015;
 const RECEIVING_ADDRESS = process.env.RECEIVING_ADDRESS;
 const NETWORK = (process.env.NETWORK || 'base-sepolia');
 const CHAIN_ID = NETWORK === 'base' ? '8453' : '84532';
-// x402 v2 resource server with CDP facilitator + Bazaar extension
-const facilitatorClient = new HTTPFacilitatorClient({
-    url: 'https://api.cdp.coinbase.com/platform/v2/x402/facilitator',
-    createAuthHeaders: () => {
-        const keyId = process.env.CDP_API_KEY_ID || '';
-        const secret = process.env.CDP_API_KEY_SECRET || '';
-        const credentials = Buffer.from(`${keyId}:${secret}`).toString('base64');
-        const headers = { Authorization: `Basic ${credentials}` };
-        return Promise.resolve({ verify: headers, settle: headers, supported: headers });
-    },
-});
-const bazaarClient = withBazaar(facilitatorClient);
-const resourceServer = new x402ResourceServer(bazaarClient)
-    .register(`eip155:${CHAIN_ID}`, new ExactEvmScheme());
 // Bazaar discovery extension for /scrape
 const scrapeDiscovery = declareDiscoveryExtension({
     bodyType: 'json',
@@ -338,19 +322,25 @@ app.get('/probe', (c) => {
         network: NETWORK,
     });
 });
-app.use('/scrape', paymentMiddleware({
+app.use('/scrape', paymentMiddleware(RECEIVING_ADDRESS, {
     'POST /scrape': {
-        accepts: {
-            scheme: 'exact',
-            price: `$${PRICE_STATIC}`,
-            network: `eip155:${CHAIN_ID}`,
-            payTo: RECEIVING_ADDRESS,
-            maxTimeoutSeconds: 300,
+        price: `$${PRICE_STATIC}`,
+        network: NETWORK,
+        config: {
+            description: 'Scrape any public URL to clean markdown',
+            mimeType: 'application/json',
         },
-        description: 'Scrape any public URL to clean markdown',
-        mimeType: 'application/json',
     },
-}, resourceServer));
+}, {
+    url: 'https://api.cdp.coinbase.com/platform/v2/x402/facilitator',
+    createAuthHeaders: () => {
+        const keyId = process.env.CDP_API_KEY_ID || '';
+        const secret = process.env.CDP_API_KEY_SECRET || '';
+        const credentials = Buffer.from(`${keyId}:${secret}`).toString('base64');
+        const headers = { Authorization: `Basic ${credentials}` };
+        return Promise.resolve({ verify: headers, settle: headers, supported: headers });
+    },
+}));
 app.post('/scrape', async (c) => {
     let body;
     try {
