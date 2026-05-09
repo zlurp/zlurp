@@ -130,163 +130,306 @@ Any URL → clean markdown. Pay per scrape via x402 micropayments on Base. No ac
   c.header('Link', '</sitemap.xml>; rel="sitemap", </index.md>; rel="alternate"; type="text/markdown", </openapi.json>; rel="service-desc"; type="application/json"')
   c.header('Vary', 'Accept')
 
+  c.header('Link', '</sitemap.xml>; rel="sitemap", </index.md>; rel="alternate"; type="text/markdown", </openapi.json>; rel="service-desc"; type="application/json"')
+  c.header('Vary', 'Accept')
+
   return c.html(`<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>zlurp — Web Scraping API for AI Agents</title>
-  <meta name="description" content="Any URL to clean markdown. Web scraping API for AI agents. Pay $0.005 per scrape via USDC on Base. No accounts, no API keys, no subscriptions.">
-  <meta property="og:title" content="zlurp — Web Scraping API for AI Agents">
-  <meta property="og:description" content="Any URL to clean markdown. Pay per scrape via x402 micropayments. No accounts needed.">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://zlurp.ai">
-  <meta property="og:image" content="https://zlurp.ai/og.png">
-  <link rel="canonical" href="https://zlurp.ai">
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebPage",
-    "speakable": {
-      "@type": "SpeakableSpecification",
-      "cssSelector": ["h1", ".hero-desc"]
-    },
-    "url": "https://zlurp.ai"
-  }
-  </script>
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "zlurp",
-    "url": "https://zlurp.ai",
-    "description": "Web scraping API for AI agents. Convert any URL to clean markdown via x402 micropayments on Base. No accounts, no API keys, no subscriptions.",
-    "applicationCategory": "DeveloperApplication",
-    "operatingSystem": "Web",
-    "offers": {
-      "@type": "Offer",
-      "price": "0.005",
-      "priceCurrency": "USDC",
-      "description": "Pay per scrape via x402 micropayments"
-    },
-    "provider": {
-      "@type": "Organization",
-      "name": "zlurp",
-      "url": "https://zlurp.ai",
-      "email": "hello@zlurp.ai"
-    },
-    "featureList": [
-      "URL to markdown conversion",
-      "x402 micropayments",
-      "No API keys required",
-      "Article extraction mode",
-      "Full page mode",
-      "robots.txt compliant",
-      "Redis caching"
-    ],
-    "sameAs": [
-      "https://github.com/zlurp/zlurp"
-    ]
-  }
-  </script>
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "zlurp",
-    "url": "https://zlurp.ai",
-    "email": "hello@zlurp.ai",
-    "description": "Web scraping API for AI agents",
-    "contactPoint": {
-      "@type": "ContactPoint",
-      "email": "hello@zlurp.ai",
-      "contactType": "technical support"
-    },
-    "sameAs": ["https://github.com/zlurp/zlurp"]
-  }
-  </script>
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "How much does zlurp cost?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "zlurp costs $0.005 USDC per URL for static scraping and $0.015 USDC per URL for JS-rendered pages."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Do I need an account to use zlurp?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "No. zlurp uses x402 micropayments on Base. Any wallet with USDC can call the API immediately with no account or API key required."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "What is the x402 payment protocol?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "x402 is an HTTP payment protocol that uses the 402 Payment Required status code. Agents pay USDC on Base automatically using an x402-compatible client like x402-fetch."
-        }
-      }
-    ]
-  }
-  </script>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f7f4ee; color: #1a1a18; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-    .wrap { max-width: 560px; padding: 3rem 2rem; text-align: center; }
-    .frog { font-size: 4rem; margin-bottom: 1.5rem; }
-    h1 { font-size: 2.5rem; font-weight: 400; margin-bottom: 0.75rem; font-family: Georgia, serif; }
-    h1 em { color: #1a6b3c; font-style: italic; }
-    p { color: #7a7870; font-size: 1.05rem; line-height: 1.7; margin-bottom: 2rem; }
-    .endpoints { background: #1a1a18; border-radius: 10px; padding: 1.5rem; text-align: left; font-family: monospace; font-size: 0.85rem; margin-bottom: 2rem; }
-    .endpoint { margin-bottom: 0.5rem; }
-    .method-get { color: #3dbf74; }
-    .method-post { color: #e8b86d; }
-    .path { color: #cdd6cc; }
-    .desc { color: #555; margin-left: 1rem; }
-    .price { display: inline-block; background: #e8f5ee; color: #1a6b3c; padding: 0.4rem 1rem; border-radius: 100px; font-size: 0.85rem; font-weight: 500; margin-right: 0.5rem; }
-    .links { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 1.5rem; }
-    .links a { color: #1a6b3c; font-size: 0.9rem; text-decoration: none; border-bottom: 1px solid #1a6b3c; padding-bottom: 1px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>zlurp — Web Scraping API for AI Agents</title>
+<meta name="description" content="Any URL to clean markdown. Web scraping API for AI agents. Pay $0.005 per scrape via USDC on Base. No accounts, no API keys, no subscriptions.">
+<meta property="og:title" content="zlurp — Web Scraping API for AI Agents">
+<meta property="og:description" content="Any URL to clean markdown. Pay per scrape via x402 micropayments. No accounts needed.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://zlurp.ai">
+<meta property="og:image" content="https://zlurp.ai/og.png">
+<link rel="canonical" href="https://zlurp.ai">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"zlurp","url":"https://zlurp.ai","description":"Web scraping API for AI agents. Convert any URL to clean markdown via x402 micropayments on Base. No accounts, no API keys, no subscriptions.","applicationCategory":"DeveloperApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0.005","priceCurrency":"USDC"},"provider":{"@type":"Organization","name":"zlurp","url":"https://zlurp.ai","email":"hello@zlurp.ai"},"sameAs":["https://github.com/zlurp/zlurp"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"zlurp","url":"https://zlurp.ai","email":"hello@zlurp.ai","contactPoint":{"@type":"ContactPoint","email":"hello@zlurp.ai","contactType":"technical support"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","speakable":{"@type":"SpeakableSpecification","cssSelector":["h1",".hero-sub"]},"url":"https://zlurp.ai"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How much does zlurp cost?","acceptedAnswer":{"@type":"Answer","text":"zlurp costs $0.005 USDC per URL for static scraping and $0.015 USDC per URL for JS-rendered pages."}},{"@type":"Question","name":"Do I need an account?","acceptedAnswer":{"@type":"Answer","text":"No. zlurp uses x402 micropayments on Base. Any wallet with USDC can call the API immediately with no account or API key required."}}]}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--green:#1a6b3c;--green-mid:#2d9e60;--green-light:#e8f5ee;--green-bright:#3dbf74;--cream:#f7f4ee;--cream-dark:#ede9e0;--ink:#1a1a18;--ink-mid:#3d3d38;--ink-muted:#7a7870;--font-serif:'Instrument Serif',Georgia,serif;--font-mono:'DM Mono',monospace;--font-sans:'DM Sans',system-ui,sans-serif}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-sans);background:var(--cream);color:var(--ink);line-height:1.6;overflow-x:hidden}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(247,244,238,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--cream-dark);padding:0 2rem;height:56px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{display:flex;align-items:center;gap:10px;font-family:var(--font-serif);font-size:1.4rem;color:var(--ink);text-decoration:none}
+.nav-links{display:flex;gap:2rem;align-items:center;list-style:none}
+.nav-links a{font-size:0.875rem;color:var(--ink-muted);text-decoration:none;transition:color 0.2s}
+.nav-links a:hover{color:var(--green)}
+.nav-cta{background:var(--green)!important;color:white!important;padding:0.45rem 1.1rem;border-radius:6px;font-weight:500!important}
+.ticker-wrap{overflow:hidden;background:var(--green);padding:0.65rem 0;white-space:nowrap;margin-top:56px}
+.ticker{display:inline-block;animation:ticker 22s linear infinite}
+.ticker-item{display:inline-block;color:rgba(255,255,255,0.75);font-family:var(--font-mono);font-size:0.75rem;padding:0 2.5rem}
+.ticker-item span{color:rgba(255,255,255,0.4);margin:0 0.5rem}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.hero{max-width:1100px;margin:0 auto;padding:5rem 2rem 3rem;display:flex;gap:4rem;align-items:center;flex-wrap:wrap}
+.hero-text{flex:1;min-width:280px;max-width:560px}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green);font-size:0.8rem;font-weight:500;padding:0.35rem 0.85rem;border-radius:100px;margin-bottom:1.5rem;font-family:var(--font-mono)}
+.hero-badge::before{content:'';width:7px;height:7px;background:var(--green-bright);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.85)}}
+h1{font-family:var(--font-serif);font-size:clamp(2.8rem,5vw,4.2rem);line-height:1.1;color:var(--ink);margin-bottom:1.25rem;font-weight:400}
+h1 em{font-style:italic;color:var(--green)}
+.hero-sub{font-size:1.1rem;color:var(--ink-mid);line-height:1.7;margin-bottom:2rem;font-weight:300;max-width:460px}
+.hero-actions{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+.btn-primary{background:var(--green);color:white;padding:0.75rem 1.75rem;border-radius:8px;font-size:0.95rem;font-weight:500;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:background 0.2s}
+.btn-primary:hover{background:#155230}
+.btn-secondary{color:var(--ink-mid);font-size:0.9rem;text-decoration:none}
+.hero-stats{display:flex;gap:2rem;margin-top:2.5rem;padding-top:2rem;border-top:1px solid var(--cream-dark)}
+.stat-num{font-family:var(--font-serif);font-size:1.5rem;color:var(--ink);line-height:1;display:block}
+.stat-label{font-size:0.78rem;color:var(--ink-muted)}
+.hero-visual{flex:1;min-width:280px;max-width:520px}
+.frog-svg{animation:float 4s ease-in-out infinite;filter:drop-shadow(0 12px 20px rgba(26,107,60,0.2));display:block;margin:0 auto 1.5rem}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.terminal-wrap{background:var(--ink);border-radius:12px;overflow:hidden;box-shadow:0 24px 60px rgba(26,26,24,0.2)}
+.terminal-bar{background:#2a2a27;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.5rem}
+.td{width:11px;height:11px;border-radius:50%}
+.td-r{background:#ff5f57}.td-y{background:#febc2e}.td-g{background:#28c840}
+.terminal-title{font-family:var(--font-mono);font-size:0.75rem;color:#666;margin-left:0.5rem}
+.terminal-body{padding:1.5rem;font-family:var(--font-mono);font-size:0.82rem;line-height:1.8}
+.tc{color:#5c7a5c}.tcmd{color:#7ec8a4}.tf{color:#e8b86d}.ts{color:#f0a86e}.tk{color:#82aadc}.tv{color:#c3e88d}.tw{color:#cdd6cc}
+.tcursor{display:inline-block;width:8px;height:15px;background:var(--green-bright);opacity:0.8;animation:blink 1.2s infinite;vertical-align:middle}
+@keyframes blink{0%,100%{opacity:.8}50%{opacity:0}}
+.divider{height:1px;background:var(--cream-dark);max-width:1100px;margin:0 auto}
+section{max-width:1100px;margin:0 auto;padding:5rem 2rem}
+.section-label{font-family:var(--font-mono);font-size:0.75rem;color:var(--green);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.75rem}
+h2{font-family:var(--font-serif);font-size:clamp(2rem,3.5vw,2.8rem);font-weight:400;line-height:1.15;color:var(--ink);margin-bottom:1rem}
+h2 em{font-style:italic;color:var(--green)}
+.section-sub{font-size:1rem;color:var(--ink-muted);max-width:500px;line-height:1.7;margin-bottom:3rem}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));border:1px solid var(--cream-dark);border-radius:12px;overflow:hidden;background:white}
+.step{padding:2rem 1.75rem;border-right:1px solid var(--cream-dark)}
+.step:last-child{border-right:none}
+.step-num{font-family:var(--font-mono);font-size:0.75rem;color:var(--ink-muted);margin-bottom:1rem}
+.step-icon{font-size:1.75rem;margin-bottom:0.75rem}
+.step h3{font-family:var(--font-serif);font-size:1.1rem;font-weight:400;margin-bottom:0.5rem}
+.step p{font-size:0.875rem;color:var(--ink-muted);line-height:1.6}
+.step code{font-family:var(--font-mono);font-size:0.78rem;background:var(--cream);padding:0.1rem 0.35rem;border-radius:3px}
+.pricing-wrap{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start}
+@media(max-width:700px){.pricing-wrap{grid-template-columns:1fr}}
+.price-card{background:white;border:1px solid var(--cream-dark);border-radius:12px;padding:2rem}
+.price-card.featured{background:var(--ink);border-color:var(--ink);color:white}
+.price-label{font-family:var(--font-mono);font-size:0.75rem;color:var(--ink-muted);margin-bottom:0.5rem}
+.price-card.featured .price-label{color:#888}
+.price-amount{font-family:var(--font-serif);font-size:2.5rem;line-height:1;margin-bottom:0.25rem}
+.price-unit{font-size:0.82rem;color:var(--ink-muted);margin-bottom:1.5rem}
+.price-card.featured .price-unit,.price-card.featured .price-amount{color:white}
+.price-features{list-style:none;display:flex;flex-direction:column;gap:0.6rem}
+.price-features li{display:flex;align-items:center;gap:8px;font-size:0.875rem;color:var(--ink-mid)}
+.price-card.featured .price-features li{color:#bbb}
+.price-features li::before{content:'✓';color:var(--green-bright);font-weight:700}
+.x402-callout{margin-top:1.5rem;padding:1.25rem;background:var(--green-light);border-radius:8px;font-size:0.875rem;color:var(--green);line-height:1.6}
+.compare-table{width:100%;border-collapse:collapse;background:white;border:1px solid var(--cream-dark);border-radius:12px;overflow:hidden;font-size:0.875rem}
+.compare-table th{background:var(--cream);padding:0.9rem 1.25rem;text-align:left;font-weight:500;font-size:0.82rem;color:var(--ink-muted);border-bottom:1px solid var(--cream-dark)}
+.compare-table th.hl{color:var(--green)}
+.compare-table td{padding:0.85rem 1.25rem;border-bottom:1px solid var(--cream-dark);color:var(--ink-mid)}
+.compare-table tr:last-child td{border-bottom:none}
+.compare-table td:first-child{font-weight:500;color:var(--ink)}
+.chk{color:var(--green-bright)}.crs{color:#ccc}.thl{background:rgba(30,107,60,0.03)}
+footer{border-top:1px solid var(--cream-dark);padding:2.5rem 2rem;max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+.footer-logo{font-family:var(--font-serif);font-size:1.1rem;color:var(--ink);display:flex;align-items:center;gap:8px;text-decoration:none}
+.footer-links{display:flex;gap:1.5rem;list-style:none}
+.footer-links a{font-size:0.82rem;color:var(--ink-muted);text-decoration:none;transition:color 0.2s}
+.footer-links a:hover{color:var(--green)}
+.orank-badge{font-family:var(--font-mono);font-size:0.72rem;color:var(--green);background:var(--green-light);padding:0.3rem 0.7rem;border-radius:4px;text-decoration:none}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="frog">🐸</div>
-    <h1>Any URL. <em>Clean markdown.</em></h1>
-    <p class="hero-desc">Web scraping API for AI agents. Convert any public URL to clean markdown. Pay $0.005 per scrape via USDC on Base using the x402 protocol. No accounts, no API keys, no subscriptions. Any AI agent with a Base wallet can start scraping immediately with zero human setup.</p>
-    <p style="color:#7a7870;font-size:0.9rem;margin-bottom:1.5rem;">Unlike Firecrawl, Diffbot, or ScrapingBee — zlurp uses x402 micropayments so agents can pay autonomously. No credit cards, no subscriptions, no onboarding friction. Just send a URL and get back clean markdown.</p>
-    <div class="endpoints">
-      <div class="endpoint"><span class="method-get">GET</span>  <span class="path">/health</span><span class="desc"># service status</span></div>
-      <div class="endpoint"><span class="method-get">GET</span>  <span class="path">/probe?url=</span><span class="desc"># cost estimate (free)</span></div>
-      <div class="endpoint"><span class="method-post">POST</span> <span class="path">/scrape</span><span class="desc"># scrape url → markdown</span></div>
-      <div class="endpoint"><span class="method-get">GET</span>  <span class="path">/openapi.json</span><span class="desc"># api spec</span></div>
-      <div class="endpoint"><span class="method-get">GET</span>  <span class="path">/docs/llms.txt</span><span class="desc"># for agents</span></div>
+<nav>
+  <a href="#" class="nav-logo">
+    <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+      <ellipse cx="16" cy="18" rx="11" ry="9" fill="#2d9e60"/>
+      <ellipse cx="8" cy="10" rx="4.5" ry="4.5" fill="#2d9e60"/>
+      <ellipse cx="24" cy="10" rx="4.5" ry="4.5" fill="#2d9e60"/>
+      <ellipse cx="8" cy="10" rx="2.5" ry="2.5" fill="#1a6b3c"/>
+      <ellipse cx="24" cy="10" rx="2.5" ry="2.5" fill="#1a6b3c"/>
+      <ellipse cx="8" cy="10" rx="1.2" ry="1.2" fill="#0d3d22"/>
+      <ellipse cx="24" cy="10" rx="1.2" ry="1.2" fill="#0d3d22"/>
+      <path d="M11 21 Q16 24 21 21" stroke="#1a6b3c" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+    </svg>
+    zlurp
+  </a>
+  <ul class="nav-links">
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#api">API</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="/compare">Compare</a></li>
+    <li><a href="/openapi.json">Docs</a></li>
+    <li><a href="/openapi.json" class="nav-cta">Read docs →</a></li>
+  </ul>
+</nav>
+<div class="ticker-wrap">
+  <div class="ticker">
+    <span class="ticker-item">x402 native <span>·</span></span>
+    <span class="ticker-item">no API keys required <span>·</span></span>
+    <span class="ticker-item">agent-ready <span>·</span></span>
+    <span class="ticker-item">USDC on Base <span>·</span></span>
+    <span class="ticker-item">JS rendering available <span>·</span></span>
+    <span class="ticker-item">robots.txt compliant <span>·</span></span>
+    <span class="ticker-item">OpenAPI spec <span>·</span></span>
+    <span class="ticker-item">llms.txt included <span>·</span></span>
+    <span class="ticker-item">x402 native <span>·</span></span>
+    <span class="ticker-item">no API keys required <span>·</span></span>
+    <span class="ticker-item">agent-ready <span>·</span></span>
+    <span class="ticker-item">USDC on Base <span>·</span></span>
+    <span class="ticker-item">JS rendering available <span>·</span></span>
+    <span class="ticker-item">robots.txt compliant <span>·</span></span>
+    <span class="ticker-item">OpenAPI spec <span>·</span></span>
+    <span class="ticker-item">llms.txt included <span>·</span></span>
+  </div>
+</div>
+<div class="hero">
+  <div class="hero-text">
+    <div class="hero-badge">● Live — x402 v2</div>
+    <h1>Any URL.<br><em>Clean markdown.</em><br>Instantly.</h1>
+    <p class="hero-sub">A web scraping API built natively for AI agents. Send a URL, receive structured markdown. Pay $0.005 per scrape via USDC — no accounts, no subscriptions, no friction.</p>
+    <div class="hero-actions">
+      <a href="#api" class="btn-primary">Read the docs →</a>
+      <a href="#how" class="btn-secondary">See how it works ↓</a>
     </div>
-    <div>
-      <span class="price">$0.005 static</span>
-      <span class="price">$0.015 JS rendering</span>
-    </div>
-    <div class="links">
-      <a href="/openapi.json">OpenAPI Spec</a>
-      <a href="/llms.txt">llms.txt</a>
-      <a href="/pricing.md">Pricing</a>
-      <a href="/about">About</a>
-      <a href="/compare">Compare</a>
-      <a href="/docs/llms.txt">Docs</a>
-      <a href="/privacy">Privacy</a>
-      <a href="/health">Health</a>
-      <a href="https://x402.org">x402 Protocol</a>
+    <div class="hero-stats">
+      <div><span class="stat-num">$0.005</span><span class="stat-label">per URL scraped</span></div>
+      <div><span class="stat-num">~1.2s</span><span class="stat-label">avg response time</span></div>
+      <div><span class="stat-num">0</span><span class="stat-label">accounts needed</span></div>
     </div>
   </div>
+  <div class="hero-visual">
+    <svg class="frog-svg" width="120" height="100" viewBox="0 0 120 100" fill="none">
+      <ellipse cx="60" cy="65" rx="38" ry="28" fill="#2d9e60"/>
+      <ellipse cx="36" cy="42" rx="14" ry="14" fill="#2d9e60"/>
+      <ellipse cx="84" cy="42" rx="14" ry="14" fill="#2d9e60"/>
+      <ellipse cx="36" cy="42" rx="9" ry="9" fill="#f7f4ee"/>
+      <ellipse cx="84" cy="42" rx="9" ry="9" fill="#f7f4ee"/>
+      <ellipse cx="37" cy="42" rx="5" ry="5" fill="#1a1a18"/>
+      <ellipse cx="85" cy="42" rx="5" ry="5" fill="#1a1a18"/>
+      <ellipse cx="39" cy="40" rx="2" ry="2" fill="white"/>
+      <ellipse cx="87" cy="40" rx="2" ry="2" fill="white"/>
+      <ellipse cx="60" cy="70" rx="24" ry="17" fill="#3dbf74" opacity="0.45"/>
+      <path d="M44 72 Q60 82 76 72" stroke="#1a6b3c" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <path d="M60 76 Q80 68 98 58 Q104 54 108 58 Q112 62 106 66 Q100 70 82 76 Q70 80 60 76Z" fill="#e05555" opacity="0.9"/>
+      <ellipse cx="107" cy="62" rx="5" ry="4" fill="#c03333" opacity="0.9" transform="rotate(-15 107 62)"/>
+      <ellipse cx="30" cy="86" rx="12" ry="6" fill="#1a6b3c" transform="rotate(-20 30 86)"/>
+      <ellipse cx="90" cy="86" rx="12" ry="6" fill="#1a6b3c" transform="rotate(20 90 86)"/>
+    </svg>
+    <div class="terminal-wrap">
+      <div class="terminal-bar">
+        <div class="td td-r"></div><div class="td td-y"></div><div class="td td-g"></div>
+        <span class="terminal-title">zlurp API · agent client</span>
+      </div>
+      <div class="terminal-body">
+        <div class="tc"># 1. Probe cost before paying</div>
+        <div class="tcmd">curl <span class="ts">"https://zlurp.ai/probe?url=https://news.ycombinator.com"</span></div>
+        <div style="margin-bottom:0.75rem"><span class="tc">→</span> <span class="tw">{ </span><span class="tk">"costUSDC"</span><span class="tw">: </span><span class="tv">"0.005000"</span><span class="tw"> }</span></div>
+        <div class="tc"># 2. Scrape with x402 payment</div>
+        <div class="tcmd">curl <span class="tf">-X POST</span> https://zlurp.ai/scrape \</div>
+        <div style="padding-left:1.5rem" class="tcmd"><span class="tf">-d</span> <span class="ts">'{"url": "https://news.ycombinator.com"}'</span></div>
+        <div style="margin-bottom:0.5rem"><span class="tc">→</span> <span class="tw">{ </span><span class="tk">"success"</span><span class="tw">: </span><span class="tv">true</span><span class="tw">,</span></div>
+        <div style="padding-left:1.5rem"><span class="tk">"markdown"</span><span class="tw">: </span><span class="tv">"# Hacker News\n\n..."</span><span class="tw">,</span></div>
+        <div style="padding-left:1.5rem"><span class="tk">"wordCount"</span><span class="tw">: </span><span class="tv">842</span><span class="tw"> }</span></div>
+        <span class="tcursor"></span>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="divider"></div>
+<section id="how">
+  <p class="section-label">How it works</p>
+  <h2>Three steps. <em>Zero setup.</em></h2>
+  <p class="section-sub">No accounts to create. No API keys to manage. Any agent with a Base wallet can start scraping in minutes.</p>
+  <div class="steps">
+    <div class="step"><div class="step-num">01</div><div class="step-icon">🔍</div><h3>Probe the URL</h3><p>Call <code>/probe</code> with any URL. Get back the exact cost before committing payment. Always free.</p></div>
+    <div class="step"><div class="step-num">02</div><div class="step-icon">⚡</div><h3>Pay via x402</h3><p>POST to <code>/scrape</code>. The x402 protocol settles $0.005 USDC on Base automatically — no human required.</p></div>
+    <div class="step"><div class="step-num">03</div><div class="step-icon">📄</div><h3>Receive markdown</h3><p>Get clean, structured markdown back. Article mode strips nav and ads. Full mode returns the entire page.</p></div>
+    <div class="step"><div class="step-num">04</div><div class="step-icon">🤖</div><h3>Agent-native</h3><p>No sessions, no credentials, no subscriptions. Any agent with a funded Base wallet can call zlurp autonomously at 3am.</p></div>
+  </div>
+</section>
+<div class="divider"></div>
+<section id="api">
+  <p class="section-label">API reference</p>
+  <h2>Simple endpoints. <em>Predictable responses.</em></h2>
+  <p class="section-sub">Base URL: <code style="font-family:var(--font-mono)">https://zlurp.ai</code></p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+    <div style="background:white;border:1px solid var(--cream-dark);border-radius:10px;overflow:hidden"><div style="display:flex;align-items:center;gap:10px;padding:0.9rem 1.25rem;border-bottom:1px solid var(--cream-dark)"><span style="font-family:var(--font-mono);font-size:0.7rem;font-weight:500;padding:0.2rem 0.5rem;border-radius:4px;background:var(--green-light);color:var(--green)">GET</span><span style="font-family:var(--font-mono);font-size:0.82rem">/health</span><span style="margin-left:auto;font-family:var(--font-mono);font-size:0.68rem;color:var(--ink-muted);background:var(--cream);padding:0.15rem 0.5rem;border-radius:4px">no auth</span></div><div style="padding:1rem 1.25rem;font-size:0.82rem;color:var(--ink-muted)">Service status check. Required for AgentReady compliance.</div></div>
+    <div style="background:white;border:1px solid var(--cream-dark);border-radius:10px;overflow:hidden"><div style="display:flex;align-items:center;gap:10px;padding:0.9rem 1.25rem;border-bottom:1px solid var(--cream-dark)"><span style="font-family:var(--font-mono);font-size:0.7rem;font-weight:500;padding:0.2rem 0.5rem;border-radius:4px;background:var(--green-light);color:var(--green)">GET</span><span style="font-family:var(--font-mono);font-size:0.82rem">/probe</span><span style="margin-left:auto;font-family:var(--font-mono);font-size:0.68rem;color:var(--ink-muted);background:var(--cream);padding:0.15rem 0.5rem;border-radius:4px">no auth</span></div><div style="padding:1rem 1.25rem;font-size:0.82rem;color:var(--ink-muted)">Cost estimate before payment. Pass <code style="font-family:var(--font-mono);font-size:0.78rem;background:var(--cream);padding:0.1rem 0.3rem;border-radius:3px">?url=</code> to get exact USDC cost.</div></div>
+    <div style="background:white;border:1px solid var(--cream-dark);border-radius:10px;overflow:hidden"><div style="display:flex;align-items:center;gap:10px;padding:0.9rem 1.25rem;border-bottom:1px solid var(--cream-dark)"><span style="font-family:var(--font-mono);font-size:0.7rem;font-weight:500;padding:0.2rem 0.5rem;border-radius:4px;background:#fff3e0;color:#b45309">POST</span><span style="font-family:var(--font-mono);font-size:0.82rem">/scrape</span><span style="margin-left:auto;font-family:var(--font-mono);font-size:0.68rem;color:var(--ink-muted);background:var(--cream);padding:0.15rem 0.5rem;border-radius:4px">x402 payment</span></div><div style="padding:1rem 1.25rem;font-size:0.82rem;color:var(--ink-muted)">Scrape any URL to markdown. Body: <code style="font-family:var(--font-mono);font-size:0.78rem;background:var(--cream);padding:0.1rem 0.3rem;border-radius:3px">{"url":"...","mode":"article"}</code></div></div>
+    <div style="background:white;border:1px solid var(--cream-dark);border-radius:10px;overflow:hidden"><div style="display:flex;align-items:center;gap:10px;padding:0.9rem 1.25rem;border-bottom:1px solid var(--cream-dark)"><span style="font-family:var(--font-mono);font-size:0.7rem;font-weight:500;padding:0.2rem 0.5rem;border-radius:4px;background:var(--green-light);color:var(--green)">GET</span><span style="font-family:var(--font-mono);font-size:0.82rem">/openapi.json</span><span style="margin-left:auto;font-family:var(--font-mono);font-size:0.68rem;color:var(--ink-muted);background:var(--cream);padding:0.15rem 0.5rem;border-radius:4px">no auth</span></div><div style="padding:1rem 1.25rem;font-size:0.82rem;color:var(--ink-muted)">Full OpenAPI 3.1 spec. Function-calling agents use this automatically.</div></div>
+  </div>
+</section>
+<div class="divider"></div>
+<section id="pricing">
+  <p class="section-label">Pricing</p>
+  <h2>Pay only for <em>what you use.</em></h2>
+  <p class="section-sub">No subscriptions. No minimums. USDC on Base settles instantly via x402. The /probe endpoint is always free.</p>
+  <div class="pricing-wrap">
+    <div class="price-card featured">
+      <div class="price-label">Static scraping</div>
+      <div class="price-amount">$0.005</div>
+      <div class="price-unit">per URL · Cheerio + Readability</div>
+      <ul class="price-features"><li>No API keys or accounts</li><li>Pay per request via x402</li><li>USDC on Base mainnet</li><li>Article mode — strips ads &amp; nav</li><li>Full mode — entire page</li><li>Free /probe endpoint</li></ul>
+    </div>
+    <div>
+      <div class="price-card" style="margin-bottom:1.5rem">
+        <div class="price-label">JS rendering</div>
+        <div class="price-amount">$0.015</div>
+        <div class="price-unit">per URL · Playwright + Chromium</div>
+        <ul class="price-features"><li>Handles SPAs and dynamic pages</li><li>Bot-detection bypass</li><li>Same x402 payment flow</li><li>~2–4s response time</li></ul>
+      </div>
+      <div class="x402-callout"><strong>How x402 works:</strong> The HTTP 402 status code requests micropayment. Your agent receives payment requirements, settles USDC on Base, and retries automatically.<br><br><a href="https://x402.org" style="color:var(--green);font-weight:500">Learn about x402 →</a></div>
+    </div>
+  </div>
+</section>
+<div class="divider"></div>
+<section>
+  <p class="section-label">Why zlurp</p>
+  <h2>Unlike every other <em>scraping tool.</em></h2>
+  <p class="section-sub">Firecrawl, Diffbot, and ScrapingBee all require accounts, API keys, or billing setup — none of which an AI agent can do autonomously.</p>
+  <table class="compare-table">
+    <thead><tr><th>Feature</th><th class="hl">zlurp</th><th>Firecrawl</th><th>Diffbot</th><th>ScrapingBee</th></tr></thead>
+    <tbody>
+      <tr><td>No account required</td><td class="chk thl">✓</td><td class="crs">✗</td><td class="crs">✗</td><td class="crs">✗</td></tr>
+      <tr><td>No API key needed</td><td class="chk thl">✓</td><td class="crs">✗</td><td class="crs">✗</td><td class="crs">✗</td></tr>
+      <tr><td>x402 micropayments</td><td class="chk thl">✓</td><td class="crs">✗</td><td class="crs">✗</td><td class="crs">✗</td></tr>
+      <tr><td>Agent can start at 3am</td><td class="chk thl">✓</td><td class="crs">✗</td><td class="crs">✗</td><td class="crs">✗</td></tr>
+      <tr><td>Markdown output</td><td class="chk thl">✓</td><td class="chk">✓</td><td class="crs">✗</td><td class="crs">✗</td></tr>
+      <tr><td>JS rendering</td><td class="chk thl">✓</td><td class="chk">✓</td><td class="chk">✓</td><td class="chk">✓</td></tr>
+      <tr><td>OpenAPI spec</td><td class="chk thl">✓</td><td class="chk">✓</td><td class="chk">✓</td><td class="crs">✗</td></tr>
+      <tr><td>llms.txt</td><td class="chk thl">✓</td><td class="crs">✗</td><td class="crs">✗</td><td class="crs">✗</td></tr>
+    </tbody>
+  </table>
+</section>
+<div class="divider"></div>
+<footer>
+  <a href="#" class="footer-logo">
+    <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+      <ellipse cx="16" cy="18" rx="11" ry="9" fill="#2d9e60"/>
+      <ellipse cx="8" cy="10" rx="4.5" ry="4.5" fill="#2d9e60"/>
+      <ellipse cx="24" cy="10" rx="4.5" ry="4.5" fill="#2d9e60"/>
+      <ellipse cx="8" cy="10" rx="2.5" ry="2.5" fill="#1a6b3c"/>
+      <ellipse cx="24" cy="10" rx="2.5" ry="2.5" fill="#1a6b3c"/>
+      <path d="M11 21 Q16 24 21 21" stroke="#1a6b3c" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+    </svg>
+    zlurp.ai
+  </a>
+  <ul class="footer-links">
+    <li><a href="/openapi.json">API Docs</a></li>
+    <li><a href="/docs/llms.txt">llms.txt</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="/compare">Compare</a></li>
+    <li><a href="/about">About</a></li>
+    <li><a href="/privacy">Privacy</a></li>
+    <li><a href="https://x402.org">x402</a></li>
+    <li><a href="mailto:hello@zlurp.ai">Contact</a></li>
+  </ul>
+  <a href="https://ora.run/score/zlurp.ai" class="orank-badge">orank · agent-ready</a>
+</footer>
 </body>
 </html>`)
+
 })
 
 
