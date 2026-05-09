@@ -146,6 +146,17 @@ Any URL → clean markdown. Pay per scrape via x402 micropayments on Base. No ac
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
+    "@type": "WebPage",
+    "speakable": {
+      "@type": "SpeakableSpecification",
+      "cssSelector": ["h1", ".hero-desc"]
+    },
+    "url": "https://zlurp.ai"
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "zlurp",
     "url": "https://zlurp.ai",
@@ -249,7 +260,8 @@ Any URL → clean markdown. Pay per scrape via x402 micropayments on Base. No ac
   <div class="wrap">
     <div class="frog">🐸</div>
     <h1>Any URL. <em>Clean markdown.</em></h1>
-    <p>Web scraping API for AI agents. Pay $0.005 per scrape via USDC on Base. No accounts, no API keys, no subscriptions.</p>
+    <p class="hero-desc">Web scraping API for AI agents. Convert any public URL to clean markdown. Pay $0.005 per scrape via USDC on Base using the x402 protocol. No accounts, no API keys, no subscriptions. Any AI agent with a Base wallet can start scraping immediately with zero human setup.</p>
+    <p style="color:#7a7870;font-size:0.9rem;margin-bottom:1.5rem;">Unlike Firecrawl, Diffbot, or ScrapingBee — zlurp uses x402 micropayments so agents can pay autonomously. No credit cards, no subscriptions, no onboarding friction. Just send a URL and get back clean markdown.</p>
     <div class="endpoints">
       <div class="endpoint"><span class="method-get">GET</span>  <span class="path">/health</span><span class="desc"># service status</span></div>
       <div class="endpoint"><span class="method-get">GET</span>  <span class="path">/probe?url=</span><span class="desc"># cost estimate (free)</span></div>
@@ -266,6 +278,8 @@ Any URL → clean markdown. Pay per scrape via x402 micropayments on Base. No ac
       <a href="/llms.txt">llms.txt</a>
       <a href="/pricing.md">Pricing</a>
       <a href="/about">About</a>
+      <a href="/compare">Compare</a>
+      <a href="/docs/llms.txt">Docs</a>
       <a href="/privacy">Privacy</a>
       <a href="/health">Health</a>
       <a href="https://x402.org">x402 Protocol</a>
@@ -325,7 +339,7 @@ app.get('/.well-known/agent-card.json', (c) => {
 
 app.get('/.well-known/api-catalog', (c) => {
   c.header('Content-Type', 'application/linkset+json;profile="https://www.rfc-editor.org/info/rfc9727"')
-  return c.json({
+  return c.body(JSON.stringify({
     linkset: [
       {
         anchor: 'https://zlurp.ai',
@@ -338,7 +352,7 @@ app.get('/.well-known/api-catalog', (c) => {
         ],
       },
     ],
-  })
+  }))
 })
 
 app.get('/probe', (c) => {
@@ -785,4 +799,56 @@ app.get('/.well-known/x402', (c) => {
       }
     ]
   })
+})
+
+app.get('/compare', (c) => {
+  c.header('Content-Type', 'text/html; charset=utf-8')
+  return c.html(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>zlurp vs Firecrawl vs Diffbot vs ScrapingBee</title>
+  <meta name="description" content="Compare zlurp vs Firecrawl, Diffbot, and ScrapingBee for AI agent web scraping. zlurp uses x402 micropayments — no accounts, no API keys required.">
+  <style>body{font-family:system-ui,sans-serif;max-width:800px;margin:4rem auto;padding:0 2rem;line-height:1.7;color:#1a1a18;background:#f7f4ee}h1,h2{font-family:Georgia,serif;font-weight:400}table{width:100%;border-collapse:collapse;margin:2rem 0}th,td{padding:0.75rem 1rem;text-align:left;border-bottom:1px solid #ede9e0}th{background:#e8f5ee;color:#1a6b3c}a{color:#1a6b3c}.check{color:#1a6b3c}.cross{color:#ccc}</style>
+</head>
+<body>
+  <h1>zlurp vs Competitors</h1>
+  <p>How zlurp compares to Firecrawl, Diffbot, and ScrapingBee for AI agent web scraping.</p>
+
+  <table>
+    <thead>
+      <tr><th>Feature</th><th>zlurp</th><th>Firecrawl</th><th>Diffbot</th><th>ScrapingBee</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>No account required</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+      <tr><td>No API key needed</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+      <tr><td>x402 micropayments</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+      <tr><td>Agent can start at 3am</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+      <tr><td>Pay per request (no minimum)</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+      <tr><td>Markdown output</td><td class="check">✓</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+      <tr><td>Article extraction mode</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="cross">✗</td></tr>
+      <tr><td>JS rendering</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td>robots.txt compliant</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+      <tr><td>OpenAPI spec</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="cross">✗</td></tr>
+      <tr><td>llms.txt</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+      <tr><td>Price per URL</td><td>$0.005</td><td>~$0.003–0.01</td><td>~$0.01–0.05</td><td>~$0.002–0.01</td></tr>
+    </tbody>
+  </table>
+
+  <h2>The key difference</h2>
+  <p>Every other scraping tool requires a human to create an account, enter a credit card, and generate an API key. An AI agent can't do any of that autonomously. zlurp uses x402 — any agent with a funded Base wallet can call it immediately at 3am without any human intervention.</p>
+  <p><a href="/">← Back to zlurp</a></p>
+</body>
+</html>`)
+})
+
+app.get('/api/llms.txt', (c) => {
+  try {
+    const txt = readFileSync(new URL('../public/docs/llms.txt', import.meta.url), 'utf-8')
+    c.header('Content-Type', 'text/plain; charset=utf-8')
+    return c.body(txt)
+  } catch {
+    return c.text('Not found', 404)
+  }
 })
