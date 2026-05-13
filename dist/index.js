@@ -766,15 +766,34 @@ app.get('/.well-known/mcp', (c) => {
         serverUrl: 'https://zlurp.ai/mcp',
         transport: 'streamable-http',
         name: 'zlurp',
+        version: '1.0.0',
         description: 'Web scraping for AI agents. Convert any URL to clean markdown via x402 micropayments.',
+        instructions: 'Use probe_url to check cost before scraping. Use scrape_url to fetch any public URL as clean markdown. Payment is handled via x402 on Base — $0.005 USDC per scrape.',
         tools: [
             {
                 name: 'probe_url',
                 description: 'Get cost estimate for scraping a URL. Always free.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        url: { type: 'string', description: 'The URL to get a cost estimate for' },
+                        js: { type: 'boolean', description: 'Whether JS rendering is needed' },
+                    },
+                    required: ['url'],
+                },
             },
             {
                 name: 'scrape_url',
-                description: 'Scrape any URL to clean markdown. Costs $0.005 USDC via x402.',
+                description: 'Scrape any public URL and return clean markdown. Costs $0.005 USDC via x402 on Base.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        url: { type: 'string', description: 'The URL to scrape' },
+                        mode: { type: 'string', enum: ['article', 'full'], description: 'article strips nav/ads, full returns entire page' },
+                        js: { type: 'boolean', description: 'Enable JS rendering for SPAs' },
+                    },
+                    required: ['url'],
+                },
             },
         ],
     });
@@ -1007,4 +1026,25 @@ app.get('/api/llms.txt', (c) => {
     catch {
         return c.text('Not found', 404);
     }
+});
+app.get('/contact', (c) => {
+    c.header('Content-Type', 'text/html; charset=utf-8');
+    return c.html(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact — zlurp</title>
+  <meta name="description" content="Contact zlurp — web scraping API for AI agents.">
+  <style>body{font-family:system-ui,sans-serif;max-width:640px;margin:4rem auto;padding:0 2rem;line-height:1.7;color:#1a1a18;background:#f7f4ee}h1{font-family:Georgia,serif;font-weight:400;margin-bottom:1rem}a{color:#1a6b3c}</style>
+</head>
+<body>
+  <h1>Contact</h1>
+  <p>For support, bug reports, or general inquiries:</p>
+  <p>Email: <a href="mailto:hello@zlurp.ai">hello@zlurp.ai</a></p>
+  <p>GitHub: <a href="https://github.com/zlurp/zlurp">github.com/zlurp/zlurp</a></p>
+  <p>For API issues, include your request URL and the error response.</p>
+  <p><a href="/">← Home</a></p>
+</body>
+</html>`);
 });

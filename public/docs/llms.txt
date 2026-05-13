@@ -111,3 +111,13 @@ https://zlurp.ai/openapi.json
 ## Contact
 
 hello@zlurp.ai
+## Quick Links
+
+- [OpenAPI Spec](https://zlurp.ai/openapi.json)
+- [Pricing](https://zlurp.ai/pricing.md)
+- [MCP Server](https://zlurp.ai/mcp)
+- [Agent Card](https://zlurp.ai/.well-known/agent-card.json)
+- [Smithery Registry](https://smithery.ai/servers/zlurp/zlurp)
+- [About](https://zlurp.ai/about)
+- [Compare vs Firecrawl](https://zlurp.ai/compare)
+- [Contact](https://zlurp.ai/contact)
