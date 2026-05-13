@@ -59,37 +59,55 @@ export async function handleMcp(c) {
         sessionIdGenerator: undefined,
     });
     await server.connect(transport);
-    const req = c.req.raw;
-    const body = await req.json().catch(() => undefined);
+    const body = await c.req.json().catch(() => undefined);
+    const method = c.req.method;
+    const headers = Object.fromEntries(c.req.raw.headers.entries());
     return new Promise((resolve, reject) => {
+        const chunks = [];
+        let statusCode = 200;
+        const resHeaders = {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+        };
+        const mockReq = {
+            method,
+            headers,
+            url: c.req.url,
+            body: JSON.stringify(body),
+            on: (event, cb) => {
+                if (event === 'data')
+                    cb(JSON.stringify(body));
+                if (event === 'end')
+                    cb();
+                return mockReq;
+            },
+        };
         const mockRes = {
-            statusCode: 200,
-            headers: {},
-            body: [],
-            setHeader(name, value) { this.headers[name] = value; },
-            getHeader(name) { return this.headers[name]; },
-            writeHead(code, headers) {
-                this.statusCode = code;
-                if (headers)
-                    Object.assign(this.headers, headers);
+            statusCode,
+            setHeader(name, value) { resHeaders[name] = value; },
+            getHeader(name) { return resHeaders[name]; },
+            writeHead(code, hdrs) {
+                statusCode = code;
+                if (hdrs)
+                    Object.assign(resHeaders, hdrs);
             },
             write(chunk) {
-                this.body.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+                chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)));
                 return true;
             },
             end(chunk) {
                 if (chunk)
-                    this.body.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-                const responseBody = Buffer.concat(this.body);
+                    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)));
+                const responseBody = Buffer.concat(chunks);
                 resolve(new Response(responseBody.length > 0 ? responseBody : null, {
-                    status: this.statusCode,
-                    headers: this.headers,
+                    status: statusCode,
+                    headers: resHeaders,
                 }));
             },
-            on() { return this; },
-            once() { return this; },
+            on() { return mockRes; },
+            once() { return mockRes; },
             emit() { return false; },
         };
-        transport.handleRequest(req, mockRes, body).catch(reject);
+        transport.handleRequest(mockReq, mockRes, body).catch(reject);
     });
 }

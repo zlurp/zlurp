@@ -79,37 +79,55 @@ export async function handleMcp(c: Context): Promise<Response> {
 
   await server.connect(transport)
 
-  const req = c.req.raw
-  const body = await req.json().catch(() => undefined)
+  const body = await c.req.json().catch(() => undefined)
+  const method = c.req.method
+  const headers = Object.fromEntries(c.req.raw.headers.entries())
 
   return new Promise<Response>((resolve, reject) => {
+    const chunks: Buffer[] = []
+    let statusCode = 200
+    const resHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+    }
+
+    const mockReq = {
+      method,
+      headers,
+      url: c.req.url,
+      body: JSON.stringify(body),
+      on: (event: string, cb: Function) => {
+        if (event === 'data') cb(JSON.stringify(body))
+        if (event === 'end') cb()
+        return mockReq
+      },
+    }
+
     const mockRes = {
-      statusCode: 200,
-      headers: {} as Record<string, string>,
-      body: [] as Buffer[],
-      setHeader(name: string, value: string) { this.headers[name] = value },
-      getHeader(name: string) { return this.headers[name] },
-      writeHead(code: number, headers?: Record<string, string>) {
-        this.statusCode = code
-        if (headers) Object.assign(this.headers, headers)
+      statusCode,
+      setHeader(name: string, value: string) { resHeaders[name] = value },
+      getHeader(name: string) { return resHeaders[name] },
+      writeHead(code: number, hdrs?: Record<string, string>) {
+        statusCode = code
+        if (hdrs) Object.assign(resHeaders, hdrs)
       },
       write(chunk: any) {
-        this.body.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)))
         return true
       },
       end(chunk?: any) {
-        if (chunk) this.body.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
-        const responseBody = Buffer.concat(this.body)
+        if (chunk) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)))
+        const responseBody = Buffer.concat(chunks)
         resolve(new Response(responseBody.length > 0 ? responseBody : null, {
-          status: this.statusCode,
-          headers: this.headers,
+          status: statusCode,
+          headers: resHeaders,
         }))
       },
-      on() { return this },
-      once() { return this },
+      on() { return mockRes },
+      once() { return mockRes },
       emit() { return false },
     }
 
-    transport.handleRequest(req as any, mockRes as any, body).catch(reject)
+    transport.handleRequest(mockReq as any, mockRes as any, body).catch(reject)
   })
 }
