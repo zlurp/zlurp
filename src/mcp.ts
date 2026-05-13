@@ -1,5 +1,4 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { z } from 'zod'
 import type { Context } from 'hono'
 
@@ -45,7 +44,7 @@ function createMcpServer() {
 
       if (res.status === 402) {
         return {
-          content: [{ type: 'text', text: 'Payment required. Configure an x402 client with a funded Base wallet to use this tool. See https://zlurp.ai/docs/llms.txt for setup instructions.' }],
+          content: [{ type: 'text', text: 'Payment required. Configure an x402 client with a funded Base wallet to use this tool. See https://zlurp.ai/docs/llms.txt for setup.' }],
           isError: true,
         }
       }
@@ -71,63 +70,17 @@ function createMcpServer() {
   return server
 }
 
+// Use WebStandardStreamableHTTPServerTransport for native Fetch API support
 export async function handleMcp(c: Context): Promise<Response> {
+  // @ts-ignore
+  const { WebStandardStreamableHTTPServerTransport } = await import('@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js')
+  
   const server = createMcpServer()
-  const transport = new StreamableHTTPServerTransport({
+  const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
   })
 
   await server.connect(transport)
 
-  const body = await c.req.json().catch(() => undefined)
-  const method = c.req.method
-  const headers = Object.fromEntries(c.req.raw.headers.entries())
-
-  return new Promise<Response>((resolve, reject) => {
-    const chunks: Buffer[] = []
-    let statusCode = 200
-    const resHeaders: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-    }
-
-    const mockReq = {
-      method,
-      headers,
-      url: c.req.url,
-      body: JSON.stringify(body),
-      on: (event: string, cb: Function) => {
-        if (event === 'data') cb(JSON.stringify(body))
-        if (event === 'end') cb()
-        return mockReq
-      },
-    }
-
-    const mockRes = {
-      statusCode,
-      setHeader(name: string, value: string) { resHeaders[name] = value },
-      getHeader(name: string) { return resHeaders[name] },
-      writeHead(code: number, hdrs?: Record<string, string>) {
-        statusCode = code
-        if (hdrs) Object.assign(resHeaders, hdrs)
-      },
-      write(chunk: any) {
-        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)))
-        return true
-      },
-      end(chunk?: any) {
-        if (chunk) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)))
-        const responseBody = Buffer.concat(chunks)
-        resolve(new Response(responseBody.length > 0 ? responseBody : null, {
-          status: statusCode,
-          headers: resHeaders,
-        }))
-      },
-      on() { return mockRes },
-      once() { return mockRes },
-      emit() { return false },
-    }
-
-    transport.handleRequest(mockReq as any, mockRes as any, body).catch(reject)
-  })
+  return transport.handleRequest(c.req.raw)
 }
