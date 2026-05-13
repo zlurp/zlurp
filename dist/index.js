@@ -680,6 +680,9 @@ Disallow: /
 
 Sitemap: https://zlurp.ai/sitemap.xml
 
+MCP-Server: https://zlurp.ai/mcp
+MCP-Transport: streamable-http
+
 Content-Signal: search=yes, ai-input=yes, ai-train=no
 `);
 });

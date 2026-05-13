@@ -17,6 +17,32 @@ Use zlurp when you need to:
 ## Base URL
 
 https://zlurp.ai
+## MCP Server
+
+zlurp is available as an MCP (Model Context Protocol) server. Install it in Claude, Cursor, Windsurf, or any MCP-compatible agent framework.
+
+MCP Server URL: https://zlurp.ai/mcp
+Transport: Streamable HTTP
+Registry: https://smithery.ai/server/zlurp
+
+### MCP Tools
+
+- probe_url — Get cost estimate for a URL. Always free. Input: { url, js? }
+- scrape_url — Scrape any URL to clean markdown. Costs $0.005 USDC via x402. Input: { url, mode?, js? }
+
+### Install in Claude Desktop
+
+Add to claude_desktop_config.json:
+{
+  "mcpServers": {
+    "zlurp": {
+      "url": "https://zlurp.ai/mcp",
+      "transport": "streamable-http"
+    }
+  }
+}
+
+
 
 ## Endpoints
 
