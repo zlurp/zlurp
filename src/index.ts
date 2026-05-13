@@ -13,6 +13,7 @@ import { x402ResourceServer, HTTPFacilitatorClient } from '@x402/core/server'
 import { ExactEvmScheme } from '@x402/evm/exact/server'
 import { bazaarResourceServerExtension, declareDiscoveryExtension, withBazaar } from '@x402/extensions/bazaar'
 import { isAllowed } from './robots.js'
+import { handleMcp } from './mcp.js'
 import { getCache, setCache } from './cache.js'
 
 const app = new Hono()
@@ -803,6 +804,78 @@ app.get('/.well-known/ai-plugin.json', (c) => {
     legal_info_url: 'https://zlurp.ai/terms',
   })
 })
+
+// ── MCP Server ────────────────────────────────────────────────────
+app.all('/mcp', async (c) => {
+  return handleMcp(c)
+})
+
+app.get('/.well-known/mcp', (c) => {
+  return c.json({
+    mcpVersion: '2024-11-05',
+    serverUrl: 'https://zlurp.ai/mcp',
+    transport: 'streamable-http',
+    name: 'zlurp',
+    description: 'Web scraping for AI agents. Convert any URL to clean markdown via x402 micropayments.',
+    tools: [
+      {
+        name: 'probe_url',
+        description: 'Get cost estimate for scraping a URL. Always free.',
+      },
+      {
+        name: 'scrape_url',
+        description: 'Scrape any URL to clean markdown. Costs $0.005 USDC via x402.',
+      },
+    ],
+  })
+})
+
+app.get('/.well-known/mcp/server-card.json', (c) => {
+  return c.json({
+    name: 'zlurp',
+    description: 'Web scraping API for AI agents. Convert any URL to clean markdown via x402 micropayments on Base.',
+    version: '1.0.0',
+    serverUrl: 'https://zlurp.ai/mcp',
+    transport: 'streamable-http',
+    tools: [
+      {
+        name: 'probe_url',
+        description: 'Get cost estimate for scraping a URL. Always free.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            url: { type: 'string', description: 'The URL to get a cost estimate for' },
+            js: { type: 'boolean', description: 'Whether JS rendering is needed' },
+          },
+          required: ['url'],
+        },
+      },
+      {
+        name: 'scrape_url',
+        description: 'Scrape any public URL and return clean markdown. Costs $0.005 USDC via x402 on Base.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            url: { type: 'string', description: 'The URL to scrape' },
+            mode: { type: 'string', enum: ['article', 'full'], description: 'article strips nav/ads, full returns entire page' },
+            js: { type: 'boolean', description: 'Enable JS rendering for SPAs' },
+          },
+          required: ['url'],
+        },
+      },
+    ],
+    pricing: {
+      probe_url: 'free',
+      scrape_url: '$0.005 USDC per URL (static), $0.015 USDC (JS rendering)',
+    },
+    payment: {
+      protocol: 'x402',
+      network: 'base',
+      asset: 'USDC',
+    },
+  })
+})
+
 
 export default app
 
