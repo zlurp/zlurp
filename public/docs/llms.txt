@@ -121,3 +121,30 @@ hello@zlurp.ai
 - [About](https://zlurp.ai/about)
 - [Compare vs Firecrawl](https://zlurp.ai/compare)
 - [Contact](https://zlurp.ai/contact)
+## Streaming
+
+zlurp supports Server-Sent Events (SSE) streaming via POST /scrape/stream.
+
+The stream emits three event types:
+- `status` — scrape started
+- `result` — full scrape result (same as /scrape response)
+- `error` — error details
+- `done` — stream complete
+
+```javascript
+const res = await fetch('https://zlurp.ai/scrape/stream', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', ...x402Headers },
+  body: JSON.stringify({ url: 'https://example.com' }),
+})
+
+for await (const chunk of res.body) {
+  const lines = new TextDecoder().decode(chunk).split('\n')
+  for (const line of lines) {
+    if (line.startsWith('data:')) {
+      const data = JSON.parse(line.slice(5))
+      console.log(data)
+    }
+  }
+}
+```

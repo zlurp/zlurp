@@ -756,6 +756,99 @@ app.get('/.well-known/ai-plugin.json', (c) => {
         legal_info_url: 'https://zlurp.ai/terms',
     });
 });
+// ── Streaming scrape endpoint ─────────────────────────────────────
+app.post('/scrape/stream', x402Middleware, async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const url = body.url;
+    const mode = body.mode || 'article';
+    const js = body.js === true;
+    if (!url) {
+        return c.json({ error: 'MISSING_URL', message: 'url is required', retryable: false }, 400);
+    }
+    c.header('Content-Type', 'text/event-stream');
+    c.header('Cache-Control', 'no-cache');
+    c.header('Connection', 'keep-alive');
+    c.header('Access-Control-Allow-Origin', '*');
+    const stream = new ReadableStream({
+        async start(controller) {
+            const send = (event, data) => {
+                controller.enqueue(new TextEncoder().encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+            };
+            try {
+                send('status', { status: 'scraping', url, mode, js });
+                const { scrapeUrl } = await import('./scraper.js');
+                const result = await scrapeUrl(url, mode, js);
+                send('result', result);
+                send('done', { status: 'complete' });
+            }
+            catch (err) {
+                send('error', { error: err.message });
+            }
+            finally {
+                controller.close();
+            }
+        }
+    });
+    return new Response(stream, {
+        headers: {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Access-Control-Allow-Origin': '*',
+        }
+    });
+});
+// ── Streaming scrape endpoint ─────────────────────────────────────
+app.post('/scrape/stream', async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const url = body.url;
+    if (!url) {
+        return c.json({ error: 'MISSING_URL', message: 'url is required', retryable: false }, 400);
+    }
+    // Stream SSE progress then proxy to /scrape
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+        async start(controller) {
+            const send = (event, data) => {
+                controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+            };
+            try {
+                send('status', { status: 'scraping', url });
+                const scrapeRes = await fetch('https://zlurp.ai/scrape', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...Object.fromEntries(c.req.raw.headers.entries()),
+                    },
+                    body: JSON.stringify(body),
+                });
+                const data = await scrapeRes.json();
+                if (!scrapeRes.ok) {
+                    send('error', data);
+                }
+                else {
+                    send('result', data);
+                    send('done', { status: 'complete', wordCount: data.wordCount });
+                }
+            }
+            catch (err) {
+                send('error', { error: 'STREAM_FAILED', message: err.message });
+            }
+            finally {
+                controller.close();
+            }
+        }
+    });
+    return new Response(stream, {
+        headers: {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Access-Control-Allow-Origin': '*',
+            'X-Accel-Buffering': 'no',
+        }
+    });
+});
 // ── MCP Server ────────────────────────────────────────────────────
 app.all('/mcp', async (c) => {
     // Add required Accept header if missing for compatibility with agents that don't send it

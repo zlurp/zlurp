@@ -424,7 +424,7 @@ footer{border-top:1px solid var(--cream-dark);padding:2.5rem 2rem;max-width:1100
     <li><a href="/about">About</a></li>
     <li><a href="/privacy">Privacy</a></li>
     <li><a href="https://x402.org">x402</a></li>
-    <li><a href="mailto:hello@zlurp.ai">Contact</a></li>
+    <li><a href="/contact">Contact</a></li>
   </ul>
   <a href="https://ora.run/score/zlurp.ai" class="orank-badge">orank · agent-ready</a>
 </footer>
@@ -805,6 +805,110 @@ app.get('/.well-known/ai-plugin.json', (c) => {
     api: { type: 'openapi', url: 'https://zlurp.ai/openapi.json' },
     contact_email: 'hello@zlurp.ai',
     legal_info_url: 'https://zlurp.ai/terms',
+  })
+})
+
+// ── Streaming scrape endpoint ─────────────────────────────────────
+app.post('/scrape/stream', x402Middleware, async (c) => {
+  const body = await c.req.json().catch(() => ({})) as any
+  const url = body.url as string
+  const mode = (body.mode as string) || 'article'
+  const js = body.js === true
+
+  if (!url) {
+    return c.json({ error: 'MISSING_URL', message: 'url is required', retryable: false }, 400)
+  }
+
+  c.header('Content-Type', 'text/event-stream')
+  c.header('Cache-Control', 'no-cache')
+  c.header('Connection', 'keep-alive')
+  c.header('Access-Control-Allow-Origin', '*')
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (event: string, data: any) => {
+        controller.enqueue(new TextEncoder().encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`))
+      }
+
+      try {
+        send('status', { status: 'scraping', url, mode, js })
+
+        const { scrapeUrl } = await import('./scraper.js')
+        const result = await scrapeUrl(url, mode as 'article' | 'full', js)
+
+        send('result', result)
+        send('done', { status: 'complete' })
+      } catch (err: any) {
+        send('error', { error: err.message })
+      } finally {
+        controller.close()
+      }
+    }
+  })
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+    }
+  })
+})
+
+// ── Streaming scrape endpoint ─────────────────────────────────────
+app.post('/scrape/stream', async (c) => {
+  const body = await c.req.json().catch(() => ({})) as any
+  const url = body.url as string
+
+  if (!url) {
+    return c.json({ error: 'MISSING_URL', message: 'url is required', retryable: false }, 400)
+  }
+
+  // Stream SSE progress then proxy to /scrape
+  const encoder = new TextEncoder()
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (event: string, data: any) => {
+        controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`))
+      }
+
+      try {
+        send('status', { status: 'scraping', url })
+
+        const scrapeRes = await fetch('https://zlurp.ai/scrape', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...Object.fromEntries(c.req.raw.headers.entries()),
+          },
+          body: JSON.stringify(body),
+        })
+
+        const data = await scrapeRes.json() as any
+
+        if (!scrapeRes.ok) {
+          send('error', data)
+        } else {
+          send('result', data)
+          send('done', { status: 'complete', wordCount: data.wordCount })
+        }
+      } catch (err: any) {
+        send('error', { error: 'STREAM_FAILED', message: err.message })
+      } finally {
+        controller.close()
+      }
+    }
+  })
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+      'X-Accel-Buffering': 'no',
+    }
   })
 })
 
