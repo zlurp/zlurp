@@ -775,8 +775,21 @@ app.all('/mcp', async (c) => {
     return handleMcp(c);
 });
 app.all('/.well-known/mcp', async (c) => {
-    if (c.req.method === 'POST')
+    if (c.req.method === 'POST') {
+        const accept = c.req.header('Accept') || '';
+        if (!accept.includes('text/event-stream')) {
+            const newReq = new Request(c.req.raw.url, {
+                method: c.req.raw.method,
+                headers: new Headers({
+                    ...Object.fromEntries(c.req.raw.headers.entries()),
+                    'Accept': 'application/json, text/event-stream',
+                }),
+                body: c.req.raw.body,
+            });
+            return handleMcp({ ...c, req: { ...c.req, raw: newReq } });
+        }
         return handleMcp(c);
+    }
     return c.json({
         mcp_version: '2025-06-18',
         name: 'zlurp',
