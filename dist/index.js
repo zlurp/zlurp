@@ -516,6 +516,52 @@ app.use('/scrape', paymentMiddleware({
         extensions: scrapeDiscovery,
     },
 }, resourceServer));
+// ── Shared scraping function ───────────────────────────────────────
+async function performScrape(url, mode = 'article', js = false) {
+    const cached = await getCache(url, mode);
+    if (cached) {
+        return { success: true, url, mode, title: cached.title, markdown: cached.markdown, wordCount: cached.wordCount, charCount: cached.charCount, jsRendered: false, cachedResult: true, scrapedAt: cached.scrapedAt };
+    }
+    const res = await fetch(url, {
+        signal: AbortSignal.timeout(12000),
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        },
+    });
+    if (!res.ok)
+        throw Object.assign(new Error(`Page returned HTTP ${res.status}`), { code: 'FETCH_FAILED' });
+    const html = await res.text();
+    let markdown = '', title = '';
+    if (mode === 'article') {
+        const dom = new JSDOM(html, { url });
+        const reader = new Readability(dom.window.document);
+        const article = reader.parse();
+        if (article && article.content) {
+            markdown = td.turndown(article.content);
+            title = article.title || '';
+        }
+        else {
+            const $ = cheerio.load(html);
+            $('script, style, noscript').remove();
+            markdown = td.turndown($('body').html() || '');
+            title = $('title').text().trim();
+        }
+    }
+    else {
+        const $ = cheerio.load(html);
+        $('script, style, noscript').remove();
+        markdown = td.turndown($('body').html() || '');
+        title = $('title').text().trim();
+    }
+    markdown = markdown.replace(/\n{3,}/g, '\n\n').trim();
+    if (!markdown || markdown.length < 20)
+        throw Object.assign(new Error('Page returned no extractable content'), { code: 'RENDER_FAILED' });
+    const scrapedAt = new Date().toISOString();
+    const wordCount = markdown.trim().split(/\s+/).length;
+    await setCache(url, mode, { markdown, title, wordCount, charCount: markdown.length, scrapedAt });
+    return { success: true, url, mode, title, markdown, wordCount, charCount: markdown.length, jsRendered: false, cachedResult: false, scrapedAt };
+}
 app.post('/scrape', async (c) => {
     let body;
     try {
@@ -774,22 +820,9 @@ app.post('/scrape/stream', async (c) => {
                 send('status', { status: 'scraping', url });
                 const host = c.req.header('host') || 'zlurp.ai';
                 const protocol = host.includes('localhost') ? 'http' : 'https';
-                const scrapeRes = await fetch(`${protocol}://${host}/scrape`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...Object.fromEntries(c.req.raw.headers.entries()),
-                    },
-                    body: JSON.stringify(body),
-                });
-                const data = await scrapeRes.json();
-                if (!scrapeRes.ok) {
-                    send('error', data);
-                }
-                else {
-                    send('result', data);
-                    send('done', { status: 'complete', wordCount: data.wordCount });
-                }
+                const data = await performScrape(url, body.mode || 'article', body.js === true);
+                send('result', data);
+                send('done', { status: 'complete', wordCount: data.wordCount });
             }
             catch (err) {
                 send('error', { error: 'STREAM_FAILED', message: err.message });
