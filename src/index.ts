@@ -1121,3 +1121,62 @@ app.get('/contact', (c) => {
 </body>
 </html>`)
 })
+
+app.get('/.well-known/agent.json', (c) => {
+  return c.json({
+    name: 'zlurp',
+    description: 'Web scraping API for AI agents. Convert any URL to clean markdown via x402 micropayments on Base.',
+    url: 'https://zlurp.ai',
+    version: '1.0.0',
+    capabilities: ['web-scraping', 'markdown-conversion', 'x402-payments'],
+    endpoints: [
+      { path: '/probe', method: 'GET', auth: false, description: 'Cost estimate' },
+      { path: '/scrape', method: 'POST', auth: 'x402', description: 'Scrape URL to markdown' },
+    ],
+    payment: { protocol: 'x402', network: 'base', asset: 'USDC' },
+    mcp: 'https://zlurp.ai/mcp',
+    openapi: 'https://zlurp.ai/openapi.json',
+    contact: 'hello@zlurp.ai',
+  })
+})
+
+app.get('/discovery/resources', (c) => {
+  return c.json({
+    resources: [
+      {
+        url: 'https://zlurp.ai/scrape',
+        method: 'POST',
+        description: 'Scrape any public URL to clean markdown',
+        payment: {
+          protocol: 'x402',
+          version: 2,
+          network: 'eip155:8453',
+          asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+          amount: '5000',
+          currency: 'USDC',
+        },
+        schema: {
+          input: {
+            type: 'object',
+            properties: {
+              url: { type: 'string', description: 'The public URL to scrape' },
+              mode: { type: 'string', enum: ['article', 'full'], default: 'article' },
+              js: { type: 'boolean', default: false },
+            },
+            required: ['url'],
+          },
+        },
+      },
+    ],
+  })
+})
+
+app.get('/status', (c) => {
+  return c.json({
+    status: 'operational',
+    service: 'zlurp',
+    version: '1.0.0',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  })
+})
