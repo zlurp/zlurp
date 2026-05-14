@@ -830,40 +830,20 @@ app.all('/mcp', async (c) => {
 app.all('/.well-known/mcp', async (c) => {
   if (c.req.method === 'POST') return handleMcp(c)
   return c.json({
-    mcpVersion: '2024-11-05',
-    serverUrl: 'https://zlurp.ai/mcp',
-    transport: 'streamable-http',
+    mcp_version: '2025-06-18',
     name: 'zlurp',
-    version: '1.0.0',
-    description: 'Web scraping for AI agents. Convert any URL to clean markdown via x402 micropayments.',
-    instructions: 'Use probe_url to check cost before scraping. Use scrape_url to fetch any public URL as clean markdown. Payment is handled via x402 on Base — $0.005 USDC per scrape.',
-    tools: [
-      {
-        name: 'probe_url',
-        description: 'Get cost estimate for scraping a URL. Always free.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            url: { type: 'string', description: 'The URL to get a cost estimate for' },
-            js: { type: 'boolean', description: 'Whether JS rendering is needed' },
-          },
-          required: ['url'],
-        },
-      },
-      {
-        name: 'scrape_url',
-        description: 'Scrape any public URL and return clean markdown. Costs $0.005 USDC via x402 on Base.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            url: { type: 'string', description: 'The URL to scrape' },
-            mode: { type: 'string', enum: ['article', 'full'], description: 'article strips nav/ads, full returns entire page' },
-            js: { type: 'boolean', description: 'Enable JS rendering for SPAs' },
-          },
-          required: ['url'],
-        },
-      },
-    ],
+    description: 'Web scraping for AI agents. Convert any URL to clean markdown via x402 micropayments on Base.',
+    endpoint: 'https://zlurp.ai/mcp',
+    transport: 'http',
+    capabilities: ['tools'],
+    categories: ['data', 'web-scraping', 'ai-agents'],
+    contact: 'hello@zlurp.ai',
+    docs: 'https://zlurp.ai/docs/llms.txt',
+    server_card: 'https://zlurp.ai/.well-known/mcp/server-card.json',
+    payment_required: true,
+    auth: { required: false },
+    last_updated: '2026-05-13T00:00:00Z',
+    crawl: true,
   })
 })
 
