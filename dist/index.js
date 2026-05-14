@@ -757,48 +757,6 @@ app.get('/.well-known/ai-plugin.json', (c) => {
     });
 });
 // ── Streaming scrape endpoint ─────────────────────────────────────
-app.post('/scrape/stream', x402Middleware, async (c) => {
-    const body = await c.req.json().catch(() => ({}));
-    const url = body.url;
-    const mode = body.mode || 'article';
-    const js = body.js === true;
-    if (!url) {
-        return c.json({ error: 'MISSING_URL', message: 'url is required', retryable: false }, 400);
-    }
-    c.header('Content-Type', 'text/event-stream');
-    c.header('Cache-Control', 'no-cache');
-    c.header('Connection', 'keep-alive');
-    c.header('Access-Control-Allow-Origin', '*');
-    const stream = new ReadableStream({
-        async start(controller) {
-            const send = (event, data) => {
-                controller.enqueue(new TextEncoder().encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
-            };
-            try {
-                send('status', { status: 'scraping', url, mode, js });
-                const { scrapeUrl } = await import('./scraper.js');
-                const result = await scrapeUrl(url, mode, js);
-                send('result', result);
-                send('done', { status: 'complete' });
-            }
-            catch (err) {
-                send('error', { error: err.message });
-            }
-            finally {
-                controller.close();
-            }
-        }
-    });
-    return new Response(stream, {
-        headers: {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
-            'Access-Control-Allow-Origin': '*',
-        }
-    });
-});
-// ── Streaming scrape endpoint ─────────────────────────────────────
 app.post('/scrape/stream', async (c) => {
     const body = await c.req.json().catch(() => ({}));
     const url = body.url;
