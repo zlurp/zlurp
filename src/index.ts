@@ -908,6 +908,23 @@ app.get('/.well-known/mcp/server-card.json', (c) => {
 })
 
 
+app.notFound((c) => {
+  return c.json({
+    error: 'NOT_FOUND',
+    message: `Route ${c.req.method} ${c.req.path} not found`,
+    status: 404,
+  }, 404)
+})
+
+app.onError((err, c) => {
+  console.error('Error:', err.message)
+  return c.json({
+    error: 'INTERNAL_ERROR',
+    message: err.message || 'An unexpected error occurred',
+    status: 500,
+  }, 500)
+})
+
 export default app
 
 app.get('/llms-full.txt', (c) => {
