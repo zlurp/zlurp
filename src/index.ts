@@ -827,7 +827,8 @@ app.all('/mcp', async (c) => {
   return handleMcp(c)
 })
 
-app.get('/.well-known/mcp', (c) => {
+app.all('/.well-known/mcp', async (c) => {
+  if (c.req.method === 'POST') return handleMcp(c)
   return c.json({
     mcpVersion: '2024-11-05',
     serverUrl: 'https://zlurp.ai/mcp',
