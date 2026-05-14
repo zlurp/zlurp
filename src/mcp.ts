@@ -16,6 +16,7 @@ function createMcpServer() {
       url: z.string().url().describe('The public URL to get a cost estimate for'),
       js: z.boolean().optional().default(false).describe('Whether JS rendering is needed (costs 3x more)'),
     },
+    { readOnlyHint: true, destructiveHint: false },
     async ({ url, js }) => {
       const params = new URLSearchParams({ url })
       if (js) params.set('js', 'true')
@@ -35,6 +36,7 @@ function createMcpServer() {
       mode: z.enum(['article', 'full']).optional().default('article').describe('article strips nav/ads, full returns entire page'),
       js: z.boolean().optional().default(false).describe('Enable JS rendering for SPAs ($0.015 instead of $0.005)'),
     },
+    { readOnlyHint: true, destructiveHint: false },
     async ({ url, mode, js }) => {
       const res = await fetch('https://zlurp.ai/scrape', {
         method: 'POST',
@@ -62,6 +64,33 @@ function createMcpServer() {
         content: [{
           type: 'text',
           text: `# ${data.title || 'Scraped Content'}\n\nURL: ${url}\nWords: ${data.wordCount}\nCached: ${data.cachedResult}\n\n---\n\n${data.markdown}`,
+        }],
+      }
+    }
+  )
+
+  server.tool(
+    'demo_scrape',
+    'Free demo scraping for testing. Works on example.com, wikipedia.org, news.ycombinator.com, and github.com only. No payment required. Use scrape_url for any other URL.',
+    {
+      url: z.string().url().describe('The URL to scrape (must be example.com, wikipedia.org, news.ycombinator.com, or github.com)'),
+      mode: z.enum(['article', 'full']).optional().default('article').describe('article strips nav/ads, full returns entire page'),
+    },
+    { readOnlyHint: true, destructiveHint: false },
+    async ({ url, mode }) => {
+      const res = await fetch('https://zlurp.ai/scrape-demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, mode }),
+      })
+      const data = await res.json() as any
+      if (!res.ok) {
+        return { content: [{ type: 'text', text: `Error: ${data.error} — ${data.message}` }], isError: true }
+      }
+      return {
+        content: [{
+          type: 'text',
+          text: `# ${data.title || 'Demo Scrape'}\n\nURL: ${url}\nWords: ${data.wordCount}\n\n---\n\n${data.markdown}`,
         }],
       }
     }
