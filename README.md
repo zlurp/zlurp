@@ -61,3 +61,5 @@ npm run dev
 ## Contact
 
 hello@zlurp.ai
+
+[![smithery badge](https://smithery.ai/badge/zlurp/zlurp)](https://smithery.ai/servers/zlurp/zlurp)
