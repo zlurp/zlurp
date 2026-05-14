@@ -410,7 +410,7 @@ footer{border-top:1px solid var(--cream-dark);padding:2.5rem 2rem;max-width:1100
     <li><a href="/about">About</a></li>
     <li><a href="/privacy">Privacy</a></li>
     <li><a href="https://x402.org">x402</a></li>
-    <li><a href="mailto:hello@zlurp.ai">Contact</a></li>
+    <li><a href="/contact">Contact</a></li>
   </ul>
   <a href="https://ora.run/score/zlurp.ai" class="orank-badge">orank · agent-ready</a>
 </footer>
