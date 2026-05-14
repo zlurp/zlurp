@@ -810,6 +810,20 @@ app.get('/.well-known/ai-plugin.json', (c) => {
 
 // ── MCP Server ────────────────────────────────────────────────────
 app.all('/mcp', async (c) => {
+  // Add required Accept header if missing for compatibility with agents that don't send it
+  const accept = c.req.header('Accept') || ''
+  if (!accept.includes('text/event-stream')) {
+    const newReq = new Request(c.req.raw.url, {
+      method: c.req.raw.method,
+      headers: new Headers({
+        ...Object.fromEntries(c.req.raw.headers.entries()),
+        'Accept': 'application/json, text/event-stream',
+      }),
+      body: c.req.raw.body,
+    })
+    const newContext = { ...c, req: { ...c.req, raw: newReq } }
+    return handleMcp({ ...c, req: { ...c.req, raw: newReq } } as any)
+  }
   return handleMcp(c)
 })
 
