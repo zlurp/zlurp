@@ -958,6 +958,18 @@ app.get('/.well-known/mcp/server-card.json', (c) => {
                     required: ['url'],
                 },
             },
+            {
+                name: 'demo_scrape',
+                description: 'Free demo scraping for testing on example.com, wikipedia.org, news.ycombinator.com, or github.com. No payment required.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        url: { type: 'string', description: 'The URL to scrape (demo domains only)' },
+                        mode: { type: 'string', enum: ['article', 'full'], description: 'article strips nav/ads, full returns entire page' },
+                    },
+                    required: ['url'],
+                },
+            },
         ],
         pricing: {
             probe_url: 'free',
