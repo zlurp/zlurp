@@ -1129,12 +1129,23 @@ app.get('/contact', (c) => {
   <style>body{font-family:system-ui,sans-serif;max-width:640px;margin:4rem auto;padding:0 2rem;line-height:1.7;color:#1a1a18;background:#f7f4ee}h1{font-family:Georgia,serif;font-weight:400;margin-bottom:1rem}a{color:#1a6b3c}</style>
 </head>
 <body>
-  <h1>Contact</h1>
-  <p>For support, bug reports, or general inquiries:</p>
-  <p>Email: <a href="mailto:hello@zlurp.ai">hello@zlurp.ai</a></p>
-  <p>GitHub: <a href="https://github.com/zlurp/zlurp">github.com/zlurp/zlurp</a></p>
-  <p>For API issues, include your request URL and the error response.</p>
-  <p><a href="/">← Home</a></p>
+  <h1>Contact zlurp</h1>
+  <p>zlurp is a web scraping API built for AI agents. We're happy to help with integration questions, bug reports, or general feedback.</p>
+  <h2>Email</h2>
+  <p>The best way to reach us is by email: <a href="mailto:hello@zlurp.ai">hello@zlurp.ai</a></p>
+  <p>We typically respond within 24 hours on business days.</p>
+  <h2>GitHub</h2>
+  <p>For bug reports or feature requests, open an issue on GitHub: <a href="https://github.com/zlurp/zlurp">github.com/zlurp/zlurp</a></p>
+  <h2>Support</h2>
+  <p>For API integration help, please include:</p>
+  <ul style="margin:0.5rem 0 1rem 1.5rem">
+    <li>The URL you were trying to scrape</li>
+    <li>The error response you received</li>
+    <li>Your x402 client version</li>
+  </ul>
+  <h2>MCP Server</h2>
+  <p>The zlurp MCP server is listed on Smithery: <a href="https://smithery.ai/servers/zlurp/zlurp">smithery.ai/servers/zlurp/zlurp</a>. For MCP-specific issues, open a GitHub issue.</p>
+  <p style="margin-top:2rem"><a href="/">← Home</a></p>
 </body>
 </html>`)
 })
