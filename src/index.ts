@@ -828,7 +828,9 @@ app.post('/scrape/stream', async (c) => {
       try {
         send('status', { status: 'scraping', url })
 
-        const scrapeRes = await fetch('https://zlurp.ai/scrape', {
+        const host = c.req.header('host') || 'zlurp.ai'
+        const protocol = host.includes('localhost') ? 'http' : 'https'
+        const scrapeRes = await fetch(`${protocol}://${host}/scrape`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
