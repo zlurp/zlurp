@@ -859,6 +859,41 @@ app.get('/.well-known/ai-plugin.json', (c) => {
   })
 })
 
+// ── Free demo endpoint ────────────────────────────────────────────
+app.post('/scrape-demo', async (c) => {
+  const body = await c.req.json().catch(() => ({})) as any
+  const url = body.url as string
+
+  if (!url) {
+    return c.json({ error: 'MISSING_URL', message: 'url is required', retryable: false }, 400)
+  }
+
+  // Only allow safe demo URLs
+  const demoAllowed = ['example.com', 'wikipedia.org', 'news.ycombinator.com', 'github.com']
+  let hostname = ''
+  try {
+    hostname = new URL(url).hostname.replace('www.', '')
+  } catch {
+    return c.json({ error: 'INVALID_URL', message: 'url must be a valid http/https URL', retryable: false }, 400)
+  }
+
+  if (!demoAllowed.some(d => hostname.endsWith(d))) {
+    return c.json({
+      error: 'DEMO_RESTRICTED',
+      message: `Demo endpoint only allows: ${demoAllowed.join(', ')}. Use /scrape with x402 payment for any URL.`,
+      retryable: false,
+      upgradeUrl: 'https://zlurp.ai/docs/llms.txt',
+    }, 403)
+  }
+
+  try {
+    const result = await performScrape(url, body.mode || 'article', false)
+    return c.json({ ...result, demo: true, note: 'Free demo. Use /scrape with x402 for any URL.' })
+  } catch (err: any) {
+    return c.json({ error: err.code || 'SCRAPE_FAILED', message: err.message, retryable: false }, 422)
+  }
+})
+
 // ── Streaming scrape endpoint ─────────────────────────────────────
 app.post('/scrape/stream', async (c) => {
   const body = await c.req.json().catch(() => ({})) as any
