@@ -593,6 +593,9 @@ app.post('/scrape', async (c) => {
     }
     const cached = await getCache(url, mode);
     if (cached) {
+        c.header('RateLimit-Limit', '100');
+        c.header('RateLimit-Remaining', '99');
+        c.header('RateLimit-Reset', String(Math.floor(Date.now() / 1000) + 60));
         return c.json({
             success: true,
             url,
@@ -653,6 +656,9 @@ app.post('/scrape', async (c) => {
             charCount: markdown.length,
             scrapedAt,
         });
+        c.header('RateLimit-Limit', '100');
+        c.header('RateLimit-Remaining', '99');
+        c.header('RateLimit-Reset', String(Math.floor(Date.now() / 1000) + 60));
         return c.json({
             success: true,
             url,
@@ -801,6 +807,14 @@ app.get('/.well-known/ai-plugin.json', (c) => {
         contact_email: 'hello@zlurp.ai',
         legal_info_url: 'https://zlurp.ai/terms',
     });
+});
+// ── v1 API aliases ───────────────────────────────────────────────
+app.get('/v1/health', (c) => c.redirect('/health'));
+app.get('/v1/probe', (c) => c.redirect('/probe?' + new URLSearchParams(Object.fromEntries(new URL(c.req.url).searchParams)).toString()));
+app.post('/v1/scrape', async (c) => {
+    const body = await c.req.raw.clone().json().catch(() => ({}));
+    const req = new Request('https://zlurp.ai/scrape', { method: 'POST', headers: c.req.raw.headers, body: JSON.stringify(body) });
+    return app.fetch(req);
 });
 // ── Free demo endpoint ────────────────────────────────────────────
 app.post('/scrape-demo', async (c) => {

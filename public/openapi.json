@@ -3,10 +3,16 @@
   "info": {
     "title": "zlurp API",
     "version": "1.0.0",
-    "description": "Web scraping API for AI agents. Convert any public URL to clean markdown. Pay per scrape via x402 micropayments — no accounts, no API keys, no subscriptions."
+    "description": "Web scraping API for AI agents. Convert any public URL to clean markdown. Pay per scrape via x402 micropayments — no accounts, no API keys, no subscriptions.",
+    "contact": { "email": "hello@zlurp.ai", "url": "https://zlurp.ai/contact" },
+    "license": { "name": "MIT", "url": "https://github.com/zlurp/zlurp/blob/main/LICENSE" },
+    "x-api-versioning": "URL path versioning. Current stable version: v1. Base URL: https://zlurp.ai/v1 (aliases to https://zlurp.ai).",
+    "x-rate-limits": "Rate limit headers returned on all responses: RateLimit-Limit, RateLimit-Remaining, RateLimit-Reset. Default: 100 req/min per IP.",
+    "x-retry-guidance": "On 429: wait for RateLimit-Reset. On 5xx: exponential backoff starting at 1s. x402 payments auto-retry on failure."
   },
   "servers": [
-    { "url": "https://zlurp.ai", "description": "Production (Base mainnet)" }
+    { "url": "https://zlurp.ai", "description": "Production (Base mainnet)" },
+    { "url": "https://zlurp.ai/v1", "description": "Production v1 (alias)" }
   ],
   "paths": {
     "/health": {
@@ -19,6 +25,7 @@
             "description": "Service is healthy",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/HealthResponse" },
                 "example": { "status": "ok", "service": "zlurp", "version": "1.0.0", "network": "base" }
               }
             }
@@ -30,7 +37,7 @@
       "get": {
         "summary": "Probe URL cost",
         "operationId": "probe",
-        "description": "Free cost estimate for scraping a URL. Call before /scrape to know exact USDC cost. Always free.",
+        "description": "Free cost estimate for scraping a URL. Call before /scrape to know exact USDC cost. Always free. No payment required.",
         "parameters": [
           { "name": "url", "in": "query", "required": true, "schema": { "type": "string", "format": "uri" }, "description": "The URL to estimate cost for" },
           { "name": "mode", "in": "query", "required": false, "schema": { "type": "string", "enum": ["article", "full"], "default": "article" }, "description": "article strips nav/ads. full returns entire page." },
@@ -41,7 +48,17 @@
             "description": "Cost estimate",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProbeResponse" },
                 "example": { "url": "https://example.com", "mode": "article", "js": false, "costUSDC": "0.005000", "pricePerRequest": "0.005 USDC", "network": "base" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid URL",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": { "error": "INVALID_URL", "message": "url must be a valid http/https URL", "retryable": false }
               }
             }
           }
@@ -52,20 +69,21 @@
       "post": {
         "summary": "Scrape URL to markdown",
         "operationId": "scrape",
-        "description": "Converts any public URL to clean markdown. Requires x402 micropayment in USDC on Base. Without payment returns HTTP 402 with payment requirements.",
+        "description": "Converts any public URL to clean markdown. Requires x402 micropayment in USDC on Base. Without payment returns HTTP 402 with payment requirements. Supports Idempotency-Key header for safe retries.",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "Optional UUID for idempotent requests. Same key returns cached result without charging again."
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["url"],
-                "properties": {
-                  "url": { "type": "string", "format": "uri" },
-                  "mode": { "type": "string", "enum": ["article", "full"], "default": "article" },
-                  "js": { "type": "boolean", "default": false }
-                }
-              },
+              "schema": { "$ref": "#/components/schemas/ScrapeRequest" },
               "example": { "url": "https://example.com", "mode": "article", "js": false }
             }
           }
@@ -73,8 +91,14 @@
         "responses": {
           "200": {
             "description": "Successful scrape",
+            "headers": {
+              "RateLimit-Limit": { "schema": { "type": "integer" }, "description": "Request limit per window" },
+              "RateLimit-Remaining": { "schema": { "type": "integer" }, "description": "Remaining requests in window" },
+              "RateLimit-Reset": { "schema": { "type": "integer" }, "description": "Unix timestamp when window resets" }
+            },
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/ScrapeResponse" },
                 "example": {
                   "success": true,
                   "url": "https://example.com",
@@ -90,22 +114,232 @@
               }
             }
           },
-          "402": { "description": "Payment required — x402 payment specification" },
-          "400": { "description": "Invalid URL or request" },
-          "403": { "description": "Blocked by robots.txt" },
-          "422": { "description": "No extractable content or timeout" }
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": { "error": "INVALID_URL", "message": "url must be a valid http/https URL", "retryable": false }
+              }
+            }
+          },
+          "402": {
+            "description": "Payment required — x402 payment specification in response headers",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": { "error": "PAYMENT_REQUIRED", "message": "x402 payment required. See X-Payment-Required header.", "retryable": true }
+              }
+            }
+          },
+          "403": {
+            "description": "Blocked by robots.txt",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": { "error": "BLOCKED", "message": "This URL is disallowed by robots.txt", "retryable": false }
+              }
+            }
+          },
+          "422": {
+            "description": "No extractable content or timeout",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": { "error": "RENDER_FAILED", "message": "Page returned no extractable content", "retryable": true }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded",
+            "headers": {
+              "RateLimit-Limit": { "schema": { "type": "integer" } },
+              "RateLimit-Remaining": { "schema": { "type": "integer" } },
+              "RateLimit-Reset": { "schema": { "type": "integer" } },
+              "Retry-After": { "schema": { "type": "integer" }, "description": "Seconds to wait before retrying" }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": { "error": "RATE_LIMITED", "message": "Too many requests. See Retry-After header.", "retryable": true }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": { "error": "INTERNAL_ERROR", "message": "An unexpected error occurred", "retryable": true }
+              }
+            }
+          }
         },
         "security": [{ "x402": [] }]
+      }
+    },
+    "/scrape-demo": {
+      "post": {
+        "summary": "Free demo scrape",
+        "operationId": "scrapeDemo",
+        "description": "Free demo endpoint. Scrapes example.com, wikipedia.org, news.ycombinator.com, or github.com without payment. Use /scrape for any URL.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ScrapeRequest" },
+              "example": { "url": "https://example.com", "mode": "article" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful demo scrape",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ScrapeResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "URL not in demo allowlist",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": { "error": "DEMO_RESTRICTED", "message": "Demo endpoint only allows: example.com, wikipedia.org, news.ycombinator.com, github.com", "retryable": false }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scrape/stream": {
+      "post": {
+        "summary": "Stream scrape via SSE",
+        "operationId": "scrapeStream",
+        "description": "Streaming version of /scrape using Server-Sent Events. Emits status, result, and done events. Requires x402 payment.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ScrapeRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "SSE stream",
+            "content": {
+              "text/event-stream": {
+                "schema": { "type": "string" },
+                "example": "event: status\ndata: {\"status\":\"scraping\"}\n\nevent: result\ndata: {\"markdown\":\"...\"}\n\nevent: done\ndata: {\"status\":\"complete\"}\n\n"
+              }
+            }
+          }
+        },
+        "security": [{ "x402": [] }]
+      }
+    },
+    "/status": {
+      "get": {
+        "summary": "Service status",
+        "operationId": "status",
+        "description": "Detailed service status including uptime.",
+        "responses": {
+          "200": {
+            "description": "Status",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StatusResponse" }
+              }
+            }
+          }
+        }
       }
     }
   },
   "components": {
+    "schemas": {
+      "HealthResponse": {
+        "type": "object",
+        "required": ["status", "service", "version", "network"],
+        "properties": {
+          "status": { "type": "string", "enum": ["ok", "degraded"] },
+          "service": { "type": "string" },
+          "version": { "type": "string" },
+          "network": { "type": "string" }
+        }
+      },
+      "StatusResponse": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "enum": ["operational", "degraded"] },
+          "service": { "type": "string" },
+          "version": { "type": "string" },
+          "uptime": { "type": "number" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ProbeResponse": {
+        "type": "object",
+        "required": ["url", "costUSDC", "network"],
+        "properties": {
+          "url": { "type": "string", "format": "uri" },
+          "mode": { "type": "string", "enum": ["article", "full"] },
+          "js": { "type": "boolean" },
+          "costUSDC": { "type": "string" },
+          "pricePerRequest": { "type": "string" },
+          "network": { "type": "string" }
+        }
+      },
+      "ScrapeRequest": {
+        "type": "object",
+        "required": ["url"],
+        "properties": {
+          "url": { "type": "string", "format": "uri", "description": "The public URL to scrape" },
+          "mode": { "type": "string", "enum": ["article", "full"], "default": "article", "description": "article strips nav/ads, full returns entire page" },
+          "js": { "type": "boolean", "default": false, "description": "Enable JS rendering for SPAs ($0.015 instead of $0.005)" }
+        }
+      },
+      "ScrapeResponse": {
+        "type": "object",
+        "required": ["success", "url", "markdown"],
+        "properties": {
+          "success": { "type": "boolean" },
+          "url": { "type": "string", "format": "uri" },
+          "mode": { "type": "string", "enum": ["article", "full"] },
+          "title": { "type": "string" },
+          "markdown": { "type": "string" },
+          "wordCount": { "type": "integer" },
+          "charCount": { "type": "integer" },
+          "jsRendered": { "type": "boolean" },
+          "cachedResult": { "type": "boolean" },
+          "scrapedAt": { "type": "string", "format": "date-time" },
+          "demo": { "type": "boolean" },
+          "note": { "type": "string" }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["error", "message"],
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": ["INVALID_URL", "MISSING_URL", "INVALID_BODY", "BLOCKED", "FETCH_FAILED", "RENDER_FAILED", "TIMEOUT", "SCRAPE_FAILED", "PAYMENT_REQUIRED", "RATE_LIMITED", "DEMO_RESTRICTED", "NOT_FOUND", "INTERNAL_ERROR"],
+            "description": "Machine-readable error code"
+          },
+          "message": { "type": "string", "description": "Human-readable error description" },
+          "retryable": { "type": "boolean", "description": "Whether the request can be retried" },
+          "url": { "type": "string", "description": "The URL that caused the error (if applicable)" }
+        }
+      }
+    },
     "securitySchemes": {
       "x402": {
         "type": "apiKey",
         "in": "header",
         "name": "X-PAYMENT",
-        "description": "x402 micropayment header. Generated automatically by x402-fetch or compatible clients. Pay USDC on Base."
+        "description": "x402 micropayment header. Generated automatically by x402-fetch or compatible clients. Pay $0.005 USDC on Base mainnet per scrape."
       }
     }
   }
