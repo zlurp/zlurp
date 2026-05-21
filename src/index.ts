@@ -865,6 +865,11 @@ app.get('/.well-known/ai-plugin.json', (c) => {
   })
 })
 
+// ── Deprecation policy ────────────────────────────────────────────
+// Current version: v1 (stable). No deprecation planned.
+// Sunset header will be added 6 months before any version is deprecated.
+// Subscribe to https://github.com/zlurp/zlurp/releases for notices.
+
 // ── v1 API aliases ───────────────────────────────────────────────
 app.get('/v1/health', (c) => c.redirect('/health'))
 app.get('/v1/probe', (c) => c.redirect('/probe?' + new URLSearchParams(Object.fromEntries(new URL(c.req.url).searchParams)).toString()))
@@ -903,9 +908,87 @@ app.post('/scrape-demo', async (c) => {
 
   try {
     const result = await performScrape(url, body.mode || 'article', false)
+    c.header('RateLimit-Limit', '100')
+    c.header('RateLimit-Remaining', '99')
+    c.header('RateLimit-Reset', String(Math.floor(Date.now() / 1000) + 60))
     return c.json({ ...result, demo: true, note: 'Free demo. Use /scrape with x402 for any URL.' })
   } catch (err: any) {
     return c.json({ error: err.code || 'SCRAPE_FAILED', message: err.message, retryable: false }, 422)
+  }
+})
+
+// ── Batch scrape endpoint ─────────────────────────────────────────
+app.post('/scrape/batch', async (c) => {
+  const body = await c.req.json().catch(() => ({})) as any
+  const urls = body.urls as string[]
+
+  if (!urls || !Array.isArray(urls) || urls.length === 0) {
+    return c.json({ error: 'MISSING_URLS', message: 'urls array is required', retryable: false }, 400)
+  }
+
+  if (urls.length > 10) {
+    return c.json({ error: 'BATCH_TOO_LARGE', message: 'Maximum 10 URLs per batch request', retryable: false }, 400)
+  }
+
+  c.header('RateLimit-Limit', '100')
+  c.header('RateLimit-Remaining', '99')
+  c.header('RateLimit-Reset', String(Math.floor(Date.now() / 1000) + 60))
+
+  return c.json({
+    error: 'PAYMENT_REQUIRED',
+    message: 'Batch scraping requires x402 payment. Use /scrape for individual URLs or contact hello@zlurp.ai for batch pricing.',
+    retryable: false,
+    upgradeUrl: 'https://zlurp.ai/docs/llms.txt',
+    urls,
+    estimatedCostUSDC: (urls.length * 0.005).toFixed(6),
+  }, 402)
+})
+
+// ── NLWeb /ask endpoint ────────────────────────────────────────────
+app.post('/ask', async (c) => {
+  const body = await c.req.json().catch(() => ({})) as any
+  const query = body.query as string
+  const streaming = body['prefer.streaming'] === true || c.req.header('prefer') === 'streaming=true'
+
+  if (!query) {
+    return c.json({ _meta: { response_type: 'error', version: '1.0' }, error: 'query is required' }, 400)
+  }
+
+  // Extract URL from natural language query
+  const urlMatch = query.match(/https?:\/\/[^\s]+/)
+  if (!urlMatch) {
+    return c.json({
+      _meta: { response_type: 'answer', version: '1.0' },
+      answer: 'zlurp is a web scraping API for AI agents. To scrape a URL, include it in your query. Example: "scrape https://example.com". Costs $0.005 USDC via x402 on Base.',
+      actions: [{ name: 'probe', url: 'https://zlurp.ai/probe', method: 'GET', description: 'Check cost for a URL' }],
+    })
+  }
+
+  const url = urlMatch[0]
+
+  if (streaming) {
+    const encoder = new TextEncoder()
+    const stream = new ReadableStream({
+      async start(controller) {
+        controller.enqueue(encoder.encode(`event: start\ndata: {"status":"scraping","url":"${url}"}\n\n`))
+        try {
+          const result = await performScrape(url, 'article', false)
+          controller.enqueue(encoder.encode(`event: result\ndata: ${JSON.stringify({ _meta: { response_type: 'result', version: '1.0' }, ...result })}\n\n`))
+          controller.enqueue(encoder.encode(`event: complete\ndata: {"status":"done"}\n\n`))
+        } catch (err: any) {
+          controller.enqueue(encoder.encode(`event: error\ndata: {"error":"${err.message}"}\n\n`))
+        }
+        controller.close()
+      }
+    })
+    return new Response(stream, { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' } })
+  }
+
+  try {
+    const result = await performScrape(url, 'article', false)
+    return c.json({ _meta: { response_type: 'result', version: '1.0' }, ...result })
+  } catch (err: any) {
+    return c.json({ _meta: { response_type: 'error', version: '1.0' }, error: err.message }, 422)
   }
 })
 
