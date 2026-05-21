@@ -948,7 +948,8 @@ app.post('/scrape/batch', async (c) => {
 app.post('/ask', async (c) => {
   const body = await c.req.json().catch(() => ({})) as any
   const query = body.query as string
-  const streaming = body['prefer.streaming'] === true || c.req.header('prefer') === 'streaming=true'
+  const preferHeader = c.req.header('prefer') || ''
+  const streaming = body['prefer.streaming'] === true || preferHeader.includes('streaming=true') || preferHeader.includes('streaming')
 
   if (!query) {
     return c.json({ _meta: { response_type: 'error', version: '1.0' }, error: 'query is required' }, 400)
